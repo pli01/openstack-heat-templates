@@ -1,0 +1,144 @@
+heat_template_version: 2014-10-16
+
+description: >
+  userdata : userdata config custom
+
+parameters:
+  destfile:
+    type: string
+  http_proxy:
+    type: string
+    description: http_proxy
+    default: ""
+  no_proxy:
+    type: string
+    description: no_proxy
+    default: ""
+  dns_nameservers:
+    type: comma_delimited_list
+    label: DNS nameservers
+    description: 8.8.8.8,8.8.4.4
+  dns_domainname:
+    type: comma_delimited_list
+    label: DNS dns_domainname
+    description: domain.fr,domain.net
+  deploy_account:
+    type: string
+    description: service_account
+    default: ""
+  deploy_account_ssh:
+    type: string
+    description: service_account_ssh
+    default: ""
+  deploy_private_key:
+    type: string
+    description: deploy_private_key
+    default: ""
+  deploy_public_key:
+    type: string
+    description: deploy_public_key
+    default: ""
+  stack:
+    type: string
+    default: ""
+  context:
+    type: string
+    default: ""
+  front_bastion_subnet_prefix:
+    type: string
+    description: define ip format for bastion x.x.x.x{index}
+    default: ""
+  front_subnet_prefix:
+    type: string
+    description: define ip format for node x.x.x.x{index}
+    default: ""
+  front_node_count:
+    type: number
+    description: define the count of instance
+    default: 1
+  bastion_node_count:
+    type: number
+    description: define the count of instance
+    default: 1
+  backup_account:
+    type: string
+    description: backup_account
+    default: "backup"
+  env_file_system:
+    type: string
+    description: file system mounted
+    default: "/DATA"
+
+resources:
+  userdata:
+    type: OS::Heat::CloudConfig
+    properties:
+      cloud_config:
+        merge_how: 'list(append)+dict(recurse_array)+str()'
+        groups:
+          - { get_param: deploy_account }
+          - { get_param: backup_account }
+        users:
+          - default
+          - name: { get_param: deploy_account }
+            primary-group: { get_param: deploy_account }
+            shell: /bin/bash
+            gecos: { get_param: deploy_account }
+            lock_passwd: true
+            sudo: ALL=(ALL) NOPASSWD:ALL
+            ssh-authorized-keys:
+              - { get_param: deploy_public_key }
+              - { get_param: deploy_account_ssh }
+          - name: { get_param: backup_account }
+            primary-group: { get_param: backup_account }
+            shell: /bin/bash
+            gecos: { get_param: backup_account }
+            lock_passwd: true
+            ssh-authorized-keys:
+              - { get_param: deploy_public_key }
+              - { get_param: deploy_account_ssh }
+        write_files:
+        - path: { get_param: destfile }
+          content:
+            str_replace:
+              params:
+                __http_proxy__: { get_param: http_proxy }
+                __no_proxy__: { get_param: no_proxy }
+                __nameservers__: { list_join: [' ', { get_param: dns_nameservers }] }
+                __domainname__: { list_join: [' ', { get_param: dns_domainname }] }
+                __deploy_account__: { get_param: deploy_account }
+                __deploy_private_key__: { get_param: deploy_private_key }
+                __deploy_public_key__: { get_param: deploy_public_key }
+                __context__: { get_param: context }
+                __stack__: { get_param: stack }
+                __front_bastion_subnet_prefix__: { get_param: front_bastion_subnet_prefix }
+                __front_subnet_prefix__: { get_param: front_subnet_prefix }
+                __front_node_count__: { get_param: front_node_count }
+                __bastion_node_count__: { get_param: bastion_node_count }
+                __backup_account__: { get_param: backup_account }
+                __env_file_system__: { get_param: env_file_system }
+              template: |
+                # config generate from heat
+                export http_proxy="__http_proxy__"
+                export https_proxy="__http_proxy__"
+                export no_proxy="__no_proxy__"
+                export nameservers="__nameservers__"
+                export domainname="__domainname__"
+                export deploy_account="__deploy_account__"
+                export deploy_private_key="__deploy_private_key__"
+                export deploy_public_key="__deploy_public_key__"
+                export context="__context__"
+                export stack="__stack__"
+                export front_bastion_subnet_prefix="__front_bastion_subnet_prefix__"
+                export front_subnet_prefix="__front_subnet_prefix__"
+                export front_node_count="__front_node_count__"
+                export bastion_node_count="__bastion_node_count__"
+                export backup_account="__backup_account__"
+                export env_file_system="__env_file_system__"
+          owner: root:root
+          permissions: '0750'
+        runcmd:
+          - { get_param: destfile }
+outputs:
+  userdata:
+    value: { get_resource: userdata }

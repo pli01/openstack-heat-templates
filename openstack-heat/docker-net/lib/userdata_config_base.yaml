@@ -1,0 +1,49 @@
+heat_template_version: 2014-10-16
+
+resources:
+  userdata:
+    type: OS::Heat::CloudConfig
+    properties:
+      cloud_config:
+        merge_how: 'list(append)+dict(recurse_array)+str()'
+        power_state:
+          mode: reboot
+          message: "FINISH: INSTANCE REBOOTING"
+          condition: True
+#         delay: "+1"
+#         timeout: 30
+        write_files:
+        - path: /etc/dhcp/dhclient-enter-hooks.d/nodnsupdate
+          content: |
+            #!/bin/sh
+            # Disable resolv.conf generation with dhclient
+            make_resolv_conf(){
+               :
+            }
+          owner: root:root
+          permissions: '0750'
+        - path: /root/resolv_conf.sh
+          content: { get_file: ../config-scripts/resolv_conf.sh }
+          owner: root:root
+          permissions: '0750'
+        - path: /root/install_config_base.sh
+          content: { get_file: ../config-scripts/install_config_base.sh }
+          owner: root:root
+          permissions: '0750'
+        - path: /root/genere_ssh_config_custom.sh
+          content: { get_file: ../config-scripts/genere_ssh_config_custom.sh }
+          owner: root:root
+          permissions: '0750'
+        - path: /root/add_etc_hosts.sh
+          owner: root:root
+          permissions: '0750'
+          content: { get_file: ../config-scripts/add_etc_hosts.sh }
+        runcmd:
+          - /root/resolv_conf.sh
+          - /root/install_config_base.sh
+          - /root/genere_ssh_config_custom.sh
+          - /root/add_etc_hosts.sh
+outputs:
+  userdata:
+    value: {get_resource: userdata}
+
