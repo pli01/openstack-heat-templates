@@ -1,7 +1,139 @@
-heat_template_version: 2014-10-16
+heat_template_version: 2015-10-15
 
 description: >
   Build network, admin access requirements inside an empty tenant and deploy an Application
+
+parameters:
+  stack:
+    type: string
+    default: ""
+  context:
+    type: string
+    default: ""
+  key_name:
+    type: string
+    label: Name of keypair to assign to servers
+    description: key_name=foo
+  bastion_node_count:
+    type: number
+    description: define the count of bastion instance
+    default: 1
+  front_bastion_subnet_prefix:
+    type: string
+    description: define ip format for bastion x.x.x.x{index}
+    default: "192.168.1.1"
+  front_node_count:
+    type: number
+    description: define the count of instance
+    default: 1
+  front_subnet_prefix:
+    type: string
+    description: define ip format for node x.x.x.x{index}
+    default: "192.168.1.2"
+  front_subnet_cidr:
+    type: string
+    default: "192.168.1.0/24"
+  front_subnet_start:
+    type: string
+    default: "192.168.1.100"
+  front_subnet_end:
+    type: string
+    default: "192.168.1.200"
+  front_gateway_ip:
+    type: string
+    default: "192.168.1.254"
+
+  dns_nameservers:
+    type: comma_delimited_list
+    label: DNS nameservers
+    description: dns_nameservers=8.8.8.8,8.8.4.4
+  floatingip_network_name:
+    type: string
+    label: The Floating Network
+    description: floatingip_network_name=public
+  floatingip_id_bastion:
+    type: string
+    label: The Floating IP for Bastion NAT
+    description: floatingip_id=public
+  bastion_flavor:
+    type: string
+    label: The flavor for bastion Instances
+    description: flavor=small
+  front_flavor:
+    type: string
+    label: The flavor for front Instances
+    description: flavor=xsmall
+    default: small
+  image:
+    type: string
+    label: The debian image based for Instances
+    description: image=debian-8-latest
+    default: debian-8-latest
+  vol_size:
+    type: number
+    description: The size of the Cinder volume for instance
+    default: 10
+  vol_type:
+    type: string
+    description: The volume type of the Cinder volume for instance
+    default: default
+  dns_domainname:
+    type: comma_delimited_list
+    label: dns_domainname
+    description: dns_domainname
+  http_proxy:
+    type: string
+    label: http_proxy
+    description: http_proxy
+  no_proxy:
+    type: string
+    label: no_proxy
+    description: no_proxy
+  deploy_account:
+    type: string
+    label: deploy_account
+    description: deploy_account
+  deploy_account_ssh:
+    type: string
+    label: deploy_account_ssh
+    description: deploy_account_ssh
+  router_id:
+    type: string
+    label: router_id
+    description: router_id
+  vrrp_shared_ip:
+    type: json
+    label: vrrp_shared_ip
+    description: vrrp_shared_ip
+  backup_account:
+    type: string
+    description: backup_account
+    default: "backup"
+  env_file_system:
+    type: string
+    description: file system mounted
+    default: "/DATA"
+  git_srv:
+    type: string
+    description: git_srv
+    default: ""
+  git_user:
+    type: string
+    description: git_srv
+    default: ""
+  git_password:
+    type: string
+    description: git_password
+    default: ""
+  floatingip_id_front:
+    type: string
+    label: The Floating IP for Front
+    description: floatingip_id_front=public
+    default: ""
+  ansible_config:
+    type: string
+    label: ansible_config
+    description: ansible_config
 
 resources:
   random:
@@ -269,6 +401,7 @@ resources:
       bastion_node_count: { get_param: bastion_node_count }
       backup_account: { get_param: backup_account }
       env_file_system: { get_param: env_file_system }
+      ansible_config: { get_param: ansible_config }
       git_srv: { get_param: git_srv }
       git_user: { get_param: git_user }
       git_password: { get_param: git_password }
@@ -295,134 +428,6 @@ resources:
       git_srv: { get_param: git_srv }
       git_user: { get_param: git_user }
       git_password: { get_param: git_password }
-
-parameters:
-  stack:
-    type: string
-    default: ""
-  context:
-    type: string
-    default: ""
-  key_name:
-    type: string
-    label: Name of keypair to assign to servers
-    description: key_name=foo
-  bastion_node_count:
-    type: number
-    description: define the count of bastion instance
-    default: 1
-  front_bastion_subnet_prefix:
-    type: string
-    description: define ip format for bastion x.x.x.x{index}
-    default: "192.168.1.1"
-  front_node_count:
-    type: number
-    description: define the count of instance
-    default: 1
-  front_subnet_prefix:
-    type: string
-    description: define ip format for node x.x.x.x{index}
-    default: "192.168.1.2"
-  front_subnet_cidr:
-    type: string
-    default: "192.168.1.0/24"
-  front_subnet_start:
-    type: string
-    default: "192.168.1.100"
-  front_subnet_end:
-    type: string
-    default: "192.168.1.200"
-  front_gateway_ip:
-    type: string
-    default: "192.168.1.254"
-
-  dns_nameservers:
-    type: comma_delimited_list
-    label: DNS nameservers
-    description: dns_nameservers=8.8.8.8,8.8.4.4
-  floatingip_network_name:
-    type: string
-    label: The Floating Network
-    description: floatingip_network_name=public
-  floatingip_id_bastion:
-    type: string
-    label: The Floating IP for Bastion NAT
-    description: floatingip_id=public
-  bastion_flavor:
-    type: string
-    label: The flavor for bastion Instances
-    description: flavor=small
-  front_flavor:
-    type: string
-    label: The flavor for front Instances
-    description: flavor=xsmall
-    default: small
-  image:
-    type: string
-    label: The debian image based for Instances
-    description: image=debian-8-latest
-    default: debian-8-latest
-  vol_size:
-    type: number
-    description: The size of the Cinder volume for instance
-    default: 10
-  vol_type:
-    type: string
-    description: The volume type of the Cinder volume for instance
-    default: default
-  dns_domainname:
-    type: comma_delimited_list
-    label: dns_domainname
-    description: dns_domainname
-  http_proxy:
-    type: string
-    label: http_proxy
-    description: http_proxy
-  no_proxy:
-    type: string
-    label: no_proxy
-    description: no_proxy
-  deploy_account:
-    type: string
-    label: deploy_account
-    description: deploy_account
-  deploy_account_ssh:
-    type: string
-    label: deploy_account_ssh
-    description: deploy_account_ssh
-  router_id:
-    type: string
-    label: router_id
-    description: router_id
-  vrrp_shared_ip:
-    type: json
-    label: vrrp_shared_ip
-    description: vrrp_shared_ip
-  backup_account:
-    type: string
-    description: backup_account
-    default: "backup"
-  env_file_system:
-    type: string
-    description: file system mounted
-    default: "/DATA"
-  git_srv:
-    type: string
-    description: git_srv
-    default: ""
-  git_user:
-    type: string
-    description: git_srv
-    default: ""
-  git_password:
-    type: string
-    description: git_password
-    default: ""
-  floatingip_id_front:
-    type: string
-    label: The Floating IP for Front
-    description: floatingip_id_front=public
-    default: ""
 
 outputs:
   base_name:

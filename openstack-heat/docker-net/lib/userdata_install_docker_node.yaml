@@ -1,4 +1,4 @@
-heat_template_version: 2014-10-16
+heat_template_version: 2015-10-15
 
 description: >
   config : userdata config custom
@@ -6,6 +6,9 @@ parameters:
   config_file:
     type: string
     description: config_file path
+  ansible_config:
+    type: string
+    description: ansible_config env group_vars path
 
 resources:
   userdata:
@@ -19,6 +22,7 @@ resources:
             str_replace:
               params:
                 $config_file: { get_param: config_file }
+                $ansible_config: { get_param: ansible_config }
               template: { get_file: ../config-scripts/install_docker_node.sh }
           owner: root:root
           permissions: '0750'

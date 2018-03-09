@@ -1,4 +1,4 @@
-heat_template_version: 2014-10-16
+heat_template_version: 2015-10-15
 
 description: >
   userdata : userdata node
@@ -78,6 +78,10 @@ parameters:
     type: string
     description: git_password
     default: "password"
+  ansible_config:
+    type: string
+    label: ansible_config
+    description: ansible_config
 
 resources:
   userdata:
@@ -88,6 +92,7 @@ resources:
       - config: { get_attr: [ConfigBaseGenerate, userdata] }
       - config: { get_attr: [ConfigBase, userdata] }
       - config: { get_attr: [ConfigCustom, userdata] }
+      - config: { get_attr: [ConfigAnsible, userdata] }
       - config: { get_attr: [install_docker_node, userdata] }
 
   CloudConfigInit:
@@ -120,10 +125,17 @@ resources:
   ConfigCustom:
     type: Lib::Stack::UserData::Config::Custom
 
+  ConfigAnsible:
+    type: Lib::Stack::UserData::Config::Ansible
+    properties:
+      destfile: /root/ansible_config.yaml
+      ansible_config: { get_param: ansible_config }
+
   install_docker_node:
     type: Lib::Stack::UserData::Config::Docker
     properties:
       config_file: /root/install_config_base.cfg
+      ansible_config: /root/ansible_config.yaml
 
 outputs:
   userdata:

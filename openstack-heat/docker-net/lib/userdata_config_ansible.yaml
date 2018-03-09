@@ -3,6 +3,14 @@ heat_template_version: 2015-10-15
 description: >
   userdata : userdata config custom
 
+parameters:
+  destfile:
+    type: string
+  ansible_config:
+    type: string
+    label: ansible_config
+    description: ansible_config
+
 resources:
   userdata:
     type: OS::Heat::CloudConfig
@@ -10,13 +18,11 @@ resources:
       cloud_config:
         merge_how: 'list(append)+dict(recurse_array)+str()'
         write_files:
-        - path: /root/install_config_custom.sh
-          content: { get_file: ../config-scripts/install_config_custom.sh }
+        - path: { get_param: destfile }
+          content:
+            get_file: ../config/100-ansible-env.yaml
           owner: root:root
           permissions: '0750'
-        runcmd:
-          - /root/install_config_custom.sh
 outputs:
   userdata:
-    value: {get_resource: userdata}
-
+    value: { get_resource: userdata }
