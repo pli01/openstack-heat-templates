@@ -1,2 +1,4 @@
 */heat-parameters*.yaml
 !*/heat-parameters-sample-test.yaml
+*/config/*100-ansible-env.yaml
+!*/config/sample-test-100-ansible-env.yaml
