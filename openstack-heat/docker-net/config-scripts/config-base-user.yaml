@@ -1,0 +1,24 @@
+#cloud-config
+merge_how: dict(recurse_array)+list(append)
+groups:
+  - $deploy_account
+  - $backup_account
+users:
+  - default
+  - name: $deploy_account
+    primary-group: $deploy_account
+    shell: /bin/bash
+    gecos: $deploy_account
+    lock_passwd: true
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh-authorized-keys:
+      - $deploy_public_key
+      - $deploy_account_ssh
+  - name: $backup_account
+    primary-group: $backup_account
+    shell: /bin/bash
+    gecos: $backup_account
+    lock_passwd: true
+    ssh-authorized-keys:
+      - $deploy_public_key
+      - $deploy_account_ssh

@@ -1,0 +1,23 @@
+#cloud-config
+merge_how: dict(recurse_array)+list(append)
+write_files:
+  - path: /root/install_config_base.cfg
+    owner: root:root
+    permissions: '0750'
+    content: |
+      # $destfile config generate from heat
+      export http_proxy="$http_proxy"
+      export https_proxy="$http_proxy"
+      export no_proxy="$no_proxy"
+      export nameservers="$nameservers"
+      export domainname="$domainname"
+      export deploy_account="$deploy_account"
+      export deploy_public_key="$deploy_public_key"
+      export context="$context"
+      export stack="$stack"
+      export front_bastion_subnet_prefix="$front_bastion_subnet_prefix"
+      export front_subnet_prefix="$front_subnet_prefix"
+      export front_node_count="$front_node_count"
+      export bastion_node_count="$bastion_node_count"
+      export backup_account="$backup_account"
+      export env_file_system="$env_file_system"

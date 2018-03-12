@@ -58,8 +58,8 @@ resources:
       flavor: { get_param: flavor }
       networks:
         - port: { get_resource: port }
-#      user_data_format: RAW # with cloud-init only
-      user_data_format: SOFTWARE_CONFIG
+      user_data_format: RAW # with cloud-init only
+#      user_data_format: SOFTWARE_CONFIG
       user_data: { get_param: userdata }
 
 parameters:

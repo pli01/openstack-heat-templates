@@ -1,4 +1,5 @@
 #!/bin/bash
+
 echo "# RUNNING: $(dirname $0)/$(basename $0)"
 set -x
 # source config from heat
@@ -17,8 +18,14 @@ update-ca-certificates --fresh --verbose
 export http_proxy
 export https_proxy
 export no_proxy
+
+ansible_install_dir=$ansible_install_dir
+if [ -z "$ansible_install_dir" ] ; then
+  ansible_install_dir=$(dirname $0)
+fi
+[ -d "${ansible_install_dir}" ] || mkdir -p ${ansible_install_dir}
 (
-cd $(dirname $0)
+cd ${ansible_install_dir}
 
 # get playbook
 git clone https://github.com/pli01/ansible-docker-host.git
@@ -31,7 +38,7 @@ bash -x build.sh
 # TODO: use ansible extra-vars file -e @$ansible_env
 ansible_env=$ansible_config
 if [ -f "$ansible_env" ] ; then
-cp $ansible_env ansible/config/group_vars/docker/100-env
+  cp $ansible_env ansible/config/group_vars/docker/100-env
 fi
 
 bash -x deploy.sh

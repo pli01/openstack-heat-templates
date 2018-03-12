@@ -130,10 +130,6 @@ parameters:
     label: The Floating IP for Front
     description: floatingip_id_front=public
     default: ""
-  ansible_config:
-    type: string
-    label: ansible_config
-    description: ansible_config
 
 resources:
   random:
@@ -421,7 +417,6 @@ resources:
       bastion_node_count: { get_param: bastion_node_count }
       backup_account: { get_param: backup_account }
       env_file_system: { get_param: env_file_system }
-      ansible_config: { get_param: ansible_config }
       git_srv: { get_param: git_srv }
       git_user: { get_param: git_user }
       git_password: { get_param: git_password }

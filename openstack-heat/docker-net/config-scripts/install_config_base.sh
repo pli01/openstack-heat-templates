@@ -1,8 +1,10 @@
 #!/bin/bash
+
 echo "# RUNNING: $(dirname $0)/$(basename $0)"
 set -x
 # source config from heat
 config="$(dirname $0)/$(basename $0 .sh).cfg"
+test -f "$config" || config=$config_file
 test -f "$config" && . "$config"
 echo "# config $config"
 
@@ -50,3 +52,4 @@ mkdir -p $env_file_system
 sysctl -w net.ipv6.conf.all.disable_ipv6=1 | tee -a /etc/sysctl.conf
 sysctl -w net.ipv6.conf.default.disable_ipv6=1 | tee -a /etc/sysctl.conf
 sysctl -p
+

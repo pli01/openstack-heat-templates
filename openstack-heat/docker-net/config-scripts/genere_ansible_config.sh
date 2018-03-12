@@ -8,17 +8,9 @@ test -f "$config" || config=$config_file
 test -f "$config" && . "$config"
 echo "# config $config"
 
-#
-# install custom
-#
 set -x
-# Add Common configs
-
-# Add OS config
-if [ -f /etc/debian_version ] ; then
-  export DEBIAN_FRONTEND=noninteractive
-  apt-get -qqy update
-else
-  yum -y update
-fi
-
+test -z "$destfile" && exit 1
+cat << EOF_CONFIG > $destfile
+$ansible_config
+EOF_CONFIG
+chmod 600 $destfile

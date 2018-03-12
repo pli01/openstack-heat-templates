@@ -1,0 +1,9 @@
+#cloud-config
+merge_how: 'list(append)+dict(recurse_array)+str()'
+write_files:
+  - path: $destfile
+    owner: root:root
+    permissions: '0750'
+    content: |
+      $ansible_config
+
