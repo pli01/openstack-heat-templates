@@ -1,0 +1,484 @@
+heat_template_version: 2015-10-15
+
+description: >
+  Build network, admin access requirements inside an empty tenant and deploy an Application
+
+parameters:
+  stack:
+    type: string
+    default: ""
+  context:
+    type: string
+    default: ""
+  key_name:
+    type: string
+    label: Name of keypair to assign to servers
+    description: key_name=foo
+  bastion_node_count:
+    type: number
+    description: define the count of bastion instance
+    default: 1
+  front_bastion_subnet_prefix:
+    type: string
+    description: define ip format for bastion x.x.x.x{index}
+    default: "192.168.1.1"
+  front_node_count:
+    type: number
+    description: define the count of instance
+    default: 1
+  front_subnet_prefix:
+    type: string
+    description: define ip format for node x.x.x.x{index}
+    default: "192.168.1.2"
+  front_subnet_cidr:
+    type: string
+    default: "192.168.1.0/24"
+  front_subnet_start:
+    type: string
+    default: "192.168.1.100"
+  front_subnet_end:
+    type: string
+    default: "192.168.1.200"
+  front_gateway_ip:
+    type: string
+    default: "192.168.1.254"
+
+  dns_nameservers:
+    type: comma_delimited_list
+    label: DNS nameservers
+    description: dns_nameservers=8.8.8.8,8.8.4.4
+  floatingip_network_name:
+    type: string
+    label: The Floating Network
+    description: floatingip_network_name=public
+  floatingip_id_bastion:
+    type: string
+    label: The Floating IP for Bastion NAT
+    description: floatingip_id=public
+  bastion_flavor:
+    type: string
+    label: The flavor for bastion Instances
+    description: flavor=small
+  front_flavor:
+    type: string
+    label: The flavor for front Instances
+    description: flavor=xsmall
+    default: small
+  image:
+    type: string
+    label: The debian image based for Instances
+    description: image=debian-8-latest
+    default: debian-8-latest
+  vol_size:
+    type: number
+    description: The size of the Cinder volume for instance
+    default: 10
+  vol_type:
+    type: string
+    description: The volume type of the Cinder volume for instance
+    default: default
+  dns_domainname:
+    type: comma_delimited_list
+    label: dns_domainname
+    description: dns_domainname
+  http_proxy:
+    type: string
+    label: http_proxy
+    description: http_proxy
+  no_proxy:
+    type: string
+    label: no_proxy
+    description: no_proxy
+  deploy_account:
+    type: string
+    label: deploy_account
+    description: deploy_account
+  deploy_account_ssh:
+    type: string
+    label: deploy_account_ssh
+    description: deploy_account_ssh
+  router_id:
+    type: string
+    label: router_id
+    description: router_id
+  vrrp_shared_ip:
+    type: json
+    label: vrrp_shared_ip
+    description: vrrp_shared_ip
+  backup_account:
+    type: string
+    description: backup_account
+    default: "backup"
+  env_file_system:
+    type: string
+    description: file system mounted
+    default: "/DATA"
+  git_srv:
+    type: string
+    description: git_srv
+    default: ""
+  git_user:
+    type: string
+    description: git_srv
+    default: ""
+  git_password:
+    type: string
+    description: git_password
+    default: ""
+  floatingip_id_front:
+    type: string
+    label: The Floating IP for Front
+    description: floatingip_id_front=public
+    default: ""
+
+resources:
+  random:
+    type: OS::Heat::RandomString
+    properties:
+      length: 6
+      sequence: lettersdigits
+
+  keypair:
+    type: Lib::Stack::Keypair
+    properties:
+      prefix: { get_param: deploy_account }
+
+  front_network:
+    depends_on: [ random ]
+    type: OS::Neutron::Net
+    properties:
+      admin_state_up: True
+      name:
+        str_replace:
+          template: stack%-ctx%-ress%-rand%
+          params:
+            "stack%": { get_param: 'stack' }
+            "ctx%": {get_param: context}
+            "ress%": "front-net"
+            "rand%": { get_attr: [random, value] }
+      shared: False
+
+  front_subnet:
+    type: OS::Neutron::Subnet
+    depends_on: [ front_network ]
+    properties:
+      name:
+        str_replace:
+          template: stack%-ctx%-ress%-rand%
+          params:
+            "stack%": { get_param: 'stack' }
+            "ctx%": {get_param: context}
+            "ress%": "front-subnet"
+            "rand%": { get_attr: [random, value] }
+      cidr: {get_param: front_subnet_cidr}
+      network: {get_resource: front_network}
+      allocation_pools: [{"start" : {get_param: front_subnet_start}, "end" : {get_param: front_subnet_end}}]
+      dns_nameservers: {get_param: dns_nameservers}
+      enable_dhcp: True
+      gateway_ip: {get_param: front_gateway_ip}
+      ip_version: 4
+
+  front_interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: { get_param: router_id }
+      subnet_id: { get_resource: front_subnet }
+
+  front_node_securitygroup:
+      depends_on: [ random ]
+      type: OS::Neutron::SecurityGroup
+      properties:
+        name:
+          str_replace:
+            template: stack%-ctx%-ress%-rand%
+            params:
+              "stack%": { get_param: 'stack' }
+              "ctx%": {get_param: context}
+              "ress%": "front-node"
+              "rand%": { get_attr: [random, value] }
+        rules:
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: tcp
+            port_range_min: 22
+            port_range_max: 22
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: tcp
+            port_range_min: 80
+            port_range_max: 80
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: tcp
+            port_range_min: 443
+            port_range_max: 443
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: icmp
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: 112
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: tcp
+            port_range_min: 123
+            port_range_max: 123
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: udp
+            port_range_min: 123
+            port_range_max: 123
+            direction: ingress
+
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: tcp
+            port_range_min: 53
+            port_range_max: 53
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: udp
+            port_range_min: 53
+            port_range_max: 53
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: tcp
+            port_range_min: 514
+            port_range_max: 514
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: udp
+            port_range_min: 514
+            port_range_max: 514
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: tcp
+            port_range_min: 389
+            port_range_max: 389
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: udp
+            port_range_min: 389
+            port_range_max: 389
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: tcp
+            port_range_min: 25
+            port_range_max: 25
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: udp
+            port_range_min: 25
+            port_range_max: 25
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: tcp
+            port_range_min: 2379
+            port_range_max: 2379
+            direction: ingress
+
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: tcp
+            port_range_min: 5432
+            port_range_max: 5432
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: tcp
+            port_range_min: 6379
+            port_range_max: 6379
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: tcp
+            port_range_min: 9200
+            port_range_max: 9200
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: tcp
+            port_range_min: 8888
+            port_range_max: 8888
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: tcp
+            port_range_min: 2377
+            port_range_max: 2377
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: tcp
+            port_range_min: 7946
+            port_range_max: 7946
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: udp
+            port_range_min: 7946
+            port_range_max: 7946
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: udp
+            port_range_min: 4789
+            port_range_max: 4789
+            direction: ingress
+
+  bastion_securitygroup:
+      depends_on: [ random ]
+      type: OS::Neutron::SecurityGroup
+      properties:
+        name:
+          str_replace:
+            template: stack%-ctx%-ress%-rand%
+            params:
+              "stack%": { get_param: 'stack' }
+              "ctx%": {get_param: context}
+              "ress%": "bastion"
+              "rand%": { get_attr: [random, value] }
+        rules:
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: tcp
+            port_range_min: 22
+            port_range_max: 22
+            direction: ingress
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: icmp
+            direction: ingress
+
+  bastion_group:
+    depends_on: [ front_interface, bastion_securitygroup, bastion_userdata ]
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: { get_param: bastion_node_count }
+      resource_def:
+        type: "Lib::Stack::FIPInstance::Static"
+        properties:
+          key_name: { get_param: key_name }
+          security_group:
+            - { get_resource: bastion_securitygroup }
+          network: { get_resource: front_network }
+          subnet: { get_resource: front_subnet }
+          userdata: { get_attr: [ bastion_userdata, userdata ] }
+          flavor: { get_param: bastion_flavor }
+          image: { get_param: image }
+          vol_size: { get_param: vol_size }
+          vol_type: { get_param: vol_type }
+          index: "%index%"
+          prefix: { get_param: front_bastion_subnet_prefix }
+          floatingip_id: { get_param: floatingip_id_bastion }
+          instance_basename:
+            str_replace:
+              template: stack%-ctx%-ress%-%index%
+              params:
+                "stack%": { get_param: 'stack' }
+                "ctx%": {get_param: context}
+                "ress%": "bastion"
+
+  front_node_group:
+    depends_on: [ front_interface, front_node_securitygroup, node_userdata ]
+    type: OS::Heat::AutoScalingGroup
+    properties:
+      min_size: 1
+      desired_capacity: { get_param: front_node_count }
+      max_size: 3
+      resource:
+        type: "Lib::Stack::FIPInstance::Static::ASG"
+        properties:
+          key_name: { get_param: key_name }
+          security_group:
+            - { get_resource: front_node_securitygroup }
+          network: { get_resource: front_network }
+          subnet: { get_resource: front_subnet }
+          userdata: { get_attr: [ node_userdata, userdata ] }
+          flavor: { get_param: front_flavor }
+          image: { get_param: image }
+          vol_size: { get_param: vol_size }
+          vol_type: { get_param: vol_type }
+  #        index: "%index%"
+          prefix: { get_param: front_subnet_prefix }
+          floatingip_id: { get_param: floatingip_id_front }
+          vrrp_shared_ip: { get_param: vrrp_shared_ip }
+          instance_basename:
+            str_replace:
+              template: stack%-ctx%-ress%
+              params:
+                "stack%": { get_param: 'stack' }
+                "ctx%": {get_param: context}
+                "ress%": "front-node"
+
+  scale_up_policy:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: {get_resource: front_node_group}
+      cooldown: 60
+      scaling_adjustment: 1
+
+  scale_down_policy:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: {get_resource: front_node_group}
+      cooldown: 60
+      scaling_adjustment: '-1'
+
+  node_userdata:
+    type: Lib::Stack::UserData::Node
+    properties:
+      http_proxy: { get_param: http_proxy }
+      no_proxy: { get_param: no_proxy }
+      deploy_account: { get_param: deploy_account }
+      deploy_account_ssh: { get_param: deploy_account_ssh }
+      deploy_private_key: { get_attr: [ keypair, private_key ] }
+      deploy_public_key: { get_attr: [ keypair, public_key ] }
+      dns_nameservers: { get_param: dns_nameservers }
+      dns_domainname: { get_param: dns_domainname }
+      context: { get_param: context }
+      stack: { get_param: stack }
+      front_bastion_subnet_prefix: { get_param: front_bastion_subnet_prefix }
+      front_subnet_prefix: { get_param: front_subnet_prefix }
+      front_node_count: { get_param: front_node_count }
+      bastion_node_count: { get_param: bastion_node_count }
+      backup_account: { get_param: backup_account }
+      env_file_system: { get_param: env_file_system }
+      git_srv: { get_param: git_srv }
+      git_user: { get_param: git_user }
+      git_password: { get_param: git_password }
+
+  bastion_userdata:
+    type: Lib::Stack::UserData::Bastion
+    properties:
+      http_proxy: { get_param: http_proxy }
+      no_proxy: { get_param: no_proxy }
+      deploy_account: { get_param: deploy_account }
+      deploy_account_ssh: { get_param: deploy_account_ssh }
+      deploy_private_key: { get_attr: [ keypair, private_key ] }
+      deploy_public_key: { get_attr: [ keypair, public_key ] }
+      dns_nameservers: { get_param: dns_nameservers }
+      dns_domainname: { get_param: dns_domainname }
+      context: { get_param: context }
+      stack: { get_param: stack }
+      front_bastion_subnet_prefix: { get_param: front_bastion_subnet_prefix }
+      front_subnet_prefix: { get_param: front_subnet_prefix }
+      front_node_count: { get_param: front_node_count }
+      bastion_node_count: { get_param: bastion_node_count }
+      backup_account: { get_param: backup_account }
+      env_file_system: { get_param: env_file_system }
+      git_srv: { get_param: git_srv }
+      git_user: { get_param: git_user }
+      git_password: { get_param: git_password }
+
+outputs:
+  base_name:
+    description: Random value used to tag stack resources
+    value:
+      - { get_attr: [random, value] }
+  scale_up_url:
+    description: >
+      This URL is the webhook to scale up the group.  You can invoke
+      the scale-up operation by doing an HTTP POST to this URL; no
+      body nor extra headers are needed.
+    value: {get_attr: [scale_up_policy, alarm_url]}
+  scale_dn_url:
+    description: >
+      This URL is the webhook to scale down the group.  You can invoke
+      the scale-down operation by doing an HTTP POST to this URL; no
+      body nor extra headers are needed.
+    value: {get_attr: [scale_down_policy, alarm_url]}
+  asg_size:
+    description: >
+      This is the current size of the auto scaling group.
+    value: {get_attr: [front_node_group, current_size]}
