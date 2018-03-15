@@ -21,3 +21,7 @@ write_files:
       export bastion_node_count="$bastion_node_count"
       export backup_account="$backup_account"
       export env_file_system="$env_file_system"
+      export FRONT_IP_PUBLIC="$FRONT_IP_PUBLIC"
+      export REGISTRY_URL="$REGISTRY_URL"
+      export REGISTRY_USERNAME="$REGISTRY_USERNAME"
+      export REGISTRY_PASSWORD="$REGISTRY_PASSWORD"

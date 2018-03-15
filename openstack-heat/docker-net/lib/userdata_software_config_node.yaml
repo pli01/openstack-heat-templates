@@ -78,6 +78,23 @@ parameters:
     type: string
     description: git_password
     default: "password"
+  registry_url:
+    type: string
+    description: registry_url
+    default: "localhost"
+  registry_username:
+    type: string
+    description: registry_username
+    default: "user"
+  registry_password:
+    type: string
+    description: registry_password
+    default: "password"
+
+  front_ip_public:
+    type: string
+    description: front_ip_public
+    default: "password"
 
 resources:
   userdata:
@@ -96,6 +113,7 @@ resources:
         - config: { get_resource: install_config_custom }
         - config: { get_resource: config_ansible }
         - config: { get_resource: install_docker_node }
+        - config: { get_resource: install_ci_tool_stack }
 
   cloud_config_init:
     type: "OS::Heat::SoftwareConfig"
@@ -145,6 +163,10 @@ resources:
             $backup_account: { get_param: backup_account }
             $env_file_system: { get_param: env_file_system }
             $deploy_public_key: { get_param: deploy_public_key }
+            $FRONT_IP_PUBLIC: { get_param: front_ip_public }
+            $REGISTRY_URL: { get_param: registry_url }
+            $REGISTRY_USERNAME: { get_param: registry_username }
+            $REGISTRY_PASSWORD: { get_param: registry_password }
   
   write_nodnsupdate:
     type: "OS::Heat::SoftwareConfig"
@@ -226,6 +248,18 @@ resources:
             $config_file: /root/install_config_base.cfg
             $ansible_config: /root/ansible_config.yaml
             $ansible_install_dir: /root
+
+  install_ci_tool_stack:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: {get_file: ../config-scripts/install_ci_tool_stack.sh}
+          params:
+            $config_file: /root/install_config_base.cfg
+            "$CI_TOOL_STACK_DOCKER_COMPOSE": {get_file: '../config/ci-tool-stack/docker-compose.yml'}
+            "$CI_TOOL_STACK_CONFIG": { get_file: ../config/ci-tool-stack/100-ansible-env.yaml }
 
 outputs:
   userdata:

@@ -119,16 +119,33 @@ parameters:
     default: ""
   git_user:
     type: string
-    description: git_srv
+    description: git_user
     default: ""
   git_password:
     type: string
     description: git_password
     default: ""
+  registry_url:
+    type: string
+    description: registry_url
+    default: ""
+  registry_username:
+    type: string
+    description: registry_username
+    default: ""
+  registry_password:
+    type: string
+    description: registry_password
+    default: ""
   floatingip_id_front:
     type: string
-    label: The Floating IP for Front
+    label: The Floating IP ID for Front
     description: floatingip_id_front=public
+    default: ""
+  front_ip_public:
+    type: string
+    label: The Floating IP for Front
+    description: front_ip_public
     default: ""
 
 resources:
@@ -420,6 +437,10 @@ resources:
       git_srv: { get_param: git_srv }
       git_user: { get_param: git_user }
       git_password: { get_param: git_password }
+      registry_url: { get_param: registry_url }
+      registry_username: { get_param: registry_username }
+      registry_password: { get_param: registry_password }
+      front_ip_public: { get_param: front_ip_public }
 
   bastion_userdata:
     type: Lib::Stack::UserData::Bastion
