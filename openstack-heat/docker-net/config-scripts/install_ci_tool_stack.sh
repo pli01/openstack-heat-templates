@@ -47,6 +47,9 @@ After=docker.service
 Requires=docker.service
 
 [Service]
+Environment="HTTP_PROXY=${http_proxy}"
+Environment="HTTPS_PROXY=${https_proxy}"
+Environment="NO_PROXY=${no_proxy}"
 WorkingDirectory=${CI_TOOL_STACK_CONF_DIR}
 Type=oneshot
 RemainAfterExit=yes
