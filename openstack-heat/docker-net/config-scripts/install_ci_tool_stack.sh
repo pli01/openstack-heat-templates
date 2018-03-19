@@ -18,8 +18,12 @@ mkdir -p ${CI_TOOL_STACK_CONF_DIR}
 cat > ${CI_TOOL_STACK_DOCKER_COMPOSE} <<'EOF'
 $CI_TOOL_STACK_DOCKER_COMPOSE
 EOF
-sed -i "s/__CI_TOOL_STACK_HOST__/${FRONT_IP_PUBLIC}/g ; \
-s/__REGISTRY_URL__/${REGISTRY_URL}/g ; \
+# replace config
+sed -i "s|__CI_TOOL_STACK_HOST__|${FRONT_IP_PUBLIC}|g ; \
+s|__REGISTRY_URL__|${REGISTRY_URL}|g ; \
+s|__http_proxy__|${http_proxy}|g ; \
+s|__no_proxy__|${no_proxy}|g ; \
+s|__context__|${context}|g ; \
 " ${CI_TOOL_STACK_DOCKER_COMPOSE}
 
 # prepare config
