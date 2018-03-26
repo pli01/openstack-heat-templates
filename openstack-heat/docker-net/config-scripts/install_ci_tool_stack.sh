@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+set -ex
 
 echo "# RUNNING: $(dirname $0)/$(basename $0)"
 set -x
@@ -12,7 +12,7 @@ echo "# config $config"
 export HOME=/root
 export DEBIAN_FRONTEND=noninteractive
 apt-get -qqy update
-apt-get install -qqy git ansible jq
+apt-get install -qqy curl git ansible jq
 update-ca-certificates --fresh --verbose
 
 export http_proxy
@@ -28,21 +28,21 @@ fi
 cd ${ansible_install_dir}
 
 # get playbook
-git clone https://github.com/pli01/ansible-role-service-ci-tool-stack.git
-cd ansible-role-service-ci-tool-stack || exit 1
+#git clone https://github.com/pli01/ansible-role-service-ci-tool-stack.git
+URL=https://github.com/pli01/ansible-role-service-ci-tool-stack/archive/master.tar.gz
+curl -L -k -sSf -o - $URL | tar -zxvf -
+
+cd ansible-role-service-ci-tool-stack-master || exit 1
 
 # get roles
 bash -x build.sh
 
 # get custom environment config
 # TODO: use ansible extra-vars file -e @$ansible_env
-#ansible_env=$ansible_config
-#if [ -f "$ansible_env" ] ; then
-#  cp $ansible_env ansible/config/group_vars/docker/100-env
-#fi
 
 CI_TOOL_STACK_CONF_DIR=ansible/config/group_vars/ci-tool-stack
 CI_TOOL_STACK_DOCKER_COMPOSE=${CI_TOOL_STACK_CONF_DIR}/100-docker-compose
+
 # prepare docker-compose
 cat > ${CI_TOOL_STACK_DOCKER_COMPOSE} <<'EOF'
 $CI_TOOL_STACK_DOCKER_COMPOSE
