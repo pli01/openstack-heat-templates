@@ -33,6 +33,10 @@ parameters:
   backup_account: backup-user
   env_file_system: /DATA
 
-  git_srv: 192.168.1.1
-  git_user: builder
-  git_password: password
+  repository_srv: 192.168.1.1
+  repository_username: builder
+  repository_password: password
+
+  registry_srv: 192.168.1.1
+  registry_username: builder
+  registry_password: password

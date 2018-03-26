@@ -19,6 +19,11 @@ export http_proxy
 export https_proxy
 export no_proxy
 
+curl_args=""
+if [ -z "$REPOSITORY_USERNAME" -a "$REPOSITORY_PASSWORD" ]; then
+ curl_args="-u $REPOSITORY_USERNAME:$REPOSITORY_PASSWORD"
+fi
+
 ansible_install_dir=$ansible_install_dir
 if [ -z "$ansible_install_dir" ] ; then
   ansible_install_dir=$(dirname $0)
@@ -34,7 +39,7 @@ if [ ! -d "$dest" ] ; then
    mkdir -p $dest
 fi
 
-curl -L -k -sSf -o - $URL | tar -zxvf -  --strip=1 -C $dest
+curl $curl_args -L -k -sSf -o - $URL | tar -zxvf -  --strip=1 -C $dest
 
 cd $dest || exit 1
 

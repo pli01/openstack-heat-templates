@@ -113,17 +113,17 @@ parameters:
     type: string
     description: file system mounted
     default: "/DATA"
-  git_srv:
+  repository_srv:
     type: string
-    description: git_srv
+    description: repository_srv
     default: ""
-  git_user:
+  repository_username:
     type: string
-    description: git_user
+    description: repository_username
     default: ""
-  git_password:
+  repository_password:
     type: string
-    description: git_password
+    description: repository_password
     default: ""
   registry_url:
     type: string
@@ -434,9 +434,9 @@ resources:
       bastion_node_count: { get_param: bastion_node_count }
       backup_account: { get_param: backup_account }
       env_file_system: { get_param: env_file_system }
-      git_srv: { get_param: git_srv }
-      git_user: { get_param: git_user }
-      git_password: { get_param: git_password }
+      repository_srv: { get_param: repository_srv }
+      repository_username: { get_param: repository_username }
+      repository_password: { get_param: repository_password }
       registry_url: { get_param: registry_url }
       registry_username: { get_param: registry_username }
       registry_password: { get_param: registry_password }
@@ -461,9 +461,9 @@ resources:
       bastion_node_count: { get_param: bastion_node_count }
       backup_account: { get_param: backup_account }
       env_file_system: { get_param: env_file_system }
-      git_srv: { get_param: git_srv }
-      git_user: { get_param: git_user }
-      git_password: { get_param: git_password }
+      repository_srv: { get_param: repository_srv }
+      repository_username: { get_param: repository_username }
+      repository_password: { get_param: repository_password }
 
 outputs:
   base_name:

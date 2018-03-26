@@ -66,18 +66,18 @@ parameters:
     type: string
     description: file system mounted
     default: "/DATA"
-  git_srv:
+  repository_srv:
     type: string
-    description: git_srv
-    default: "localhost"
-  git_user:
+    description: repository_srv
+    default: ""
+  repository_username:
     type: string
-    description: git_srv
-    default: "user"
-  git_password:
+    description: repository_username
+    default: ""
+  repository_password:
     type: string
-    description: git_password
-    default: "password"
+    description: repository_password
+    default: ""
   registry_url:
     type: string
     description: registry_url
@@ -167,6 +167,9 @@ resources:
             $REGISTRY_URL: { get_param: registry_url }
             $REGISTRY_USERNAME: { get_param: registry_username }
             $REGISTRY_PASSWORD: { get_param: registry_password }
+            $REPOSITORY_URL: { get_param: repository_url }
+            $REPOSITORY_USERNAME: { get_param: repository_username }
+            $REPOSITORY_PASSWORD: { get_param: repository_password }
   
   write_nodnsupdate:
     type: "OS::Heat::SoftwareConfig"

@@ -66,18 +66,18 @@ parameters:
     type: string
     description: file system mounted
     default: "/DATA"
-  git_srv:
+  repository_srv:
     type: string
-    description: git_srv
-    default: "localhost"
-  git_user:
+    description: repository_srv
+    default: ""
+  repository_username:
     type: string
-    description: git_srv
-    default: "user"
-  git_password:
+    description: repository_username
+    default: ""
+  repository_password:
     type: string
-    description: git_password
-    default: "password"
+    description: repository_password
+    default: ""
 
 resources:
   userdata:
