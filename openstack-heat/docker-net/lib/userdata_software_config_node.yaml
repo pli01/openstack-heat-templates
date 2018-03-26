@@ -167,7 +167,7 @@ resources:
             $REGISTRY_URL: { get_param: registry_url }
             $REGISTRY_USERNAME: { get_param: registry_username }
             $REGISTRY_PASSWORD: { get_param: registry_password }
-            $REPOSITORY_URL: { get_param: repository_url }
+            $REPOSITORY_URL: { get_param: repository_srv }
             $REPOSITORY_USERNAME: { get_param: repository_username }
             $REPOSITORY_PASSWORD: { get_param: repository_password }
   
