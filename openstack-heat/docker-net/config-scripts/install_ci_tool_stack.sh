@@ -28,11 +28,15 @@ fi
 cd ${ansible_install_dir}
 
 # get playbook
-#git clone https://github.com/pli01/ansible-role-service-ci-tool-stack.git
 URL=https://github.com/pli01/ansible-role-service-ci-tool-stack/archive/master.tar.gz
-curl -L -k -sSf -o - $URL | tar -zxvf -
+dest=ansible-role-service-ci-tool-stack
+if [ ! -d "$dest" ] ; then
+   mkdir -p $dest
+fi
 
-cd ansible-role-service-ci-tool-stack-master || exit 1
+curl -L -k -sSf -o - $URL | tar -zxvf -  --strip=1 -C $dest
+
+cd $dest || exit 1
 
 # get roles
 bash -x build.sh
