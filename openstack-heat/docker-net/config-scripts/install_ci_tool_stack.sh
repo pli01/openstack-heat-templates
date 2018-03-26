@@ -8,12 +8,41 @@ config="$(dirname $0)/install_config_base.cfg"
 test -f "$config" || config=$config_file
 test -f "$config" && . "$config"
 echo "# config $config"
+#
+export HOME=/root
+export DEBIAN_FRONTEND=noninteractive
+apt-get -qqy update
+apt-get install -qqy git ansible jq
+update-ca-certificates --fresh --verbose
 
-CI_TOOL_STACK_CONF_DIR="$env_file_system/srv/docker/ci-tool-stack"
-CI_TOOL_STACK_DOCKER_COMPOSE=${CI_TOOL_STACK_CONF_DIR}/docker-compose.yml
+export http_proxy
+export https_proxy
+export no_proxy
 
-mkdir -p ${CI_TOOL_STACK_CONF_DIR}
+ansible_install_dir=$ansible_install_dir
+if [ -z "$ansible_install_dir" ] ; then
+  ansible_install_dir=$(dirname $0)
+fi
+[ -d "${ansible_install_dir}" ] || mkdir -p ${ansible_install_dir}
+(
+cd ${ansible_install_dir}
 
+# get playbook
+git clone https://github.com/pli01/ansible-role-service-ci-tool-stack.git
+cd ansible-role-service-ci-tool-stack || exit 1
+
+# get roles
+bash -x build.sh
+
+# get custom environment config
+# TODO: use ansible extra-vars file -e @$ansible_env
+#ansible_env=$ansible_config
+#if [ -f "$ansible_env" ] ; then
+#  cp $ansible_env ansible/config/group_vars/docker/100-env
+#fi
+
+CI_TOOL_STACK_CONF_DIR=ansible/config/group_vars/ci-tool-stack
+CI_TOOL_STACK_DOCKER_COMPOSE=${CI_TOOL_STACK_CONF_DIR}/100-docker-compose
 # prepare docker-compose
 cat > ${CI_TOOL_STACK_DOCKER_COMPOSE} <<'EOF'
 $CI_TOOL_STACK_DOCKER_COMPOSE
@@ -26,58 +55,15 @@ s|__no_proxy__|${no_proxy}|g ; \
 s|__context__|${context}|g ; \
 " ${CI_TOOL_STACK_DOCKER_COMPOSE}
 
-# prepare config
-CI_TOOL_STACK_CONFIG=${CI_TOOL_STACK_CONF_DIR}/ansible-env.yaml
+# prepare extra config file (service-config)
+mkdir -p ansible/files
+CI_TOOL_STACK_CONFIG=ansible/files/ansible-env.yaml
 cat > ${CI_TOOL_STACK_CONFIG} <<'EOF'
 $CI_TOOL_STACK_CONFIG
 EOF
 
-# prepare data dir
-mkdir -p /opt/gitlab /opt/nexus-data /opt/jenkins
-chown 200 /opt/nexus-data
-chown 1000 /opt/jenkins
-
-cd ${CI_TOOL_STACK_CONF_DIR}
+# Login
 echo "$REGISTRY_PASSWORD" | docker login -u $REGISTRY_USERNAME --password-stdin $REGISTRY_URL
-docker-compose pull
-# docker-compose up -d
-#docker logout $REGISTRY_URL
 
-# prepare unit systemd to start docker-compose
-cat > /etc/systemd/system/ci-tool-stack.service <<EOF_UNIT
-[Unit]
-Description=ci-tool-stack Service
-After=docker.service
-Requires=docker.service
-
-[Service]
-Environment="HTTP_PROXY=${http_proxy}"
-Environment="HTTPS_PROXY=${https_proxy}"
-Environment="NO_PROXY=${no_proxy}"
-WorkingDirectory=${CI_TOOL_STACK_CONF_DIR}
-Type=oneshot
-RemainAfterExit=yes
-#Restart=always
-#RestartSec=10s
-Type=notify
-NotifyAccess=all
-TimeoutStartSec=120
-TimeoutStopSec=30
-
-ExecStartPre=-/usr/local/bin/docker-compose --no-ansi down
-ExecStartPre=-/usr/local/bin/docker-compose --no-ansi config -q
-ExecStartPre=-/usr/local/bin/docker-compose --no-ansi pull
-ExecStartPre=-/usr/local/bin/docker-compose --no-ansi images
-ExecStart=/usr/local/bin/docker-compose --no-ansi up -d
-
-ExecStop=/usr/local/bin/docker-compose --no-ansi down
-
-ExecReload=/usr/local/bin/docker-compose --no-ansi pull --parallel
-ExecReload=/usr/local/bin/docker-compose --no-ansi up -d
-
-[Install]
-WantedBy=multi-user.target
-EOF_UNIT
-
-systemctl daemon-reload
-systemctl enable ci-tool-stack
+bash -x deploy.sh
+)

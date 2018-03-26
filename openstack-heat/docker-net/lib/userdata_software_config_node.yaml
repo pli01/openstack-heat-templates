@@ -258,7 +258,8 @@ resources:
           template: {get_file: ../config-scripts/install_ci_tool_stack.sh}
           params:
             $config_file: /root/install_config_base.cfg
-            "$CI_TOOL_STACK_DOCKER_COMPOSE": {get_file: '../config/ci-tool-stack/docker-compose.yml'}
+            $ansible_install_dir: /root
+            "$CI_TOOL_STACK_DOCKER_COMPOSE": {get_file: '../config/ci-tool-stack/100-docker-compose.yml'}
             "$CI_TOOL_STACK_CONFIG": { get_file: ../config/ci-tool-stack/100-ansible-env.yaml }
 
 outputs:
