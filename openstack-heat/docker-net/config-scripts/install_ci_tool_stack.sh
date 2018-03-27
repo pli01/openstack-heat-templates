@@ -20,7 +20,7 @@ export https_proxy
 export no_proxy
 
 curl_args=""
-if [ -z "$REPOSITORY_USERNAME" -a "$REPOSITORY_PASSWORD" ]; then
+if [ ! -z "$REPOSITORY_USERNAME" -a ! -z "$REPOSITORY_PASSWORD" ]; then
  curl_args="-u $REPOSITORY_USERNAME:$REPOSITORY_PASSWORD"
 fi
 
