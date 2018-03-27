@@ -33,7 +33,9 @@ fi
 cd ${ansible_install_dir}
 
 # get playbook
-URL=https://github.com/pli01/ansible-role-service-ci-tool-stack/archive/master.tar.gz
+URL="$install_url"
+[ -z "$URL" ] && URL=https://github.com/pli01/ansible-role-service-ci-tool-stack/archive/master.tar.gz
+
 dest=ansible-role-service-ci-tool-stack
 if [ ! -d "$dest" ] ; then
    mkdir -p $dest
@@ -48,28 +50,7 @@ bash -x build.sh
 
 # get custom environment config
 # TODO: use ansible extra-vars file -e @$ansible_env
-
-CI_TOOL_STACK_CONF_DIR=ansible/config/group_vars/ci-tool-stack
-CI_TOOL_STACK_DOCKER_COMPOSE=${CI_TOOL_STACK_CONF_DIR}/100-docker-compose
-
-# prepare docker-compose
-cat > ${CI_TOOL_STACK_DOCKER_COMPOSE} <<'EOF'
-$CI_TOOL_STACK_DOCKER_COMPOSE
-EOF
-# replace config
-sed -i "s|__CI_TOOL_STACK_HOST__|${FRONT_IP_PUBLIC}|g ; \
-s|__REGISTRY_URL__|${REGISTRY_URL}|g ; \
-s|__http_proxy__|${http_proxy}|g ; \
-s|__no_proxy__|${no_proxy}|g ; \
-s|__context__|${context}|g ; \
-" ${CI_TOOL_STACK_DOCKER_COMPOSE}
-
-# prepare extra config file (service-config)
-mkdir -p ansible/files
-CI_TOOL_STACK_CONFIG=ansible/files/ansible-env.yaml
-cat > ${CI_TOOL_STACK_CONFIG} <<'EOF'
-$CI_TOOL_STACK_CONFIG
-EOF
+export CI_TOOL_STACK_HOST=${FRONT_IP_PUBLIC}
 
 # Login
 echo "$REGISTRY_PASSWORD" | docker login -u $REGISTRY_USERNAME --password-stdin $REGISTRY_URL

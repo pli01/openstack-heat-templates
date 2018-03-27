@@ -262,8 +262,7 @@ resources:
           params:
             $config_file: /root/install_config_base.cfg
             $ansible_install_dir: /root
-            "$CI_TOOL_STACK_DOCKER_COMPOSE": {get_file: '../config/ci-tool-stack/100-docker-compose.yml'}
-            "$CI_TOOL_STACK_CONFIG": { get_file: ../config/ci-tool-stack/100-ansible-env.yaml }
+            $install_url: { get_file: ../config/ci-tool-stack/install_url.yml }
 
 outputs:
   userdata:
