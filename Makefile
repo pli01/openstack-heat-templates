@@ -1,7 +1,7 @@
 #
 #
 #
-stack_name ?= 
+stack_name ?=
 stack_dir  := openstack-heat/DEFAULT
 
 heat_template := heat.yaml
@@ -86,16 +86,26 @@ list:
 	@$(openstack_cli) stack list
 
 
-DESTDIR  ?= /tmp
+DESTDIR  ?= dist
 GIT_URL_REPO ?= $(shell git config --get remote.origin.url)
 GIT_REPO ?= $(shell basename $(GIT_URL_REPO) .git)
 GIT_BRANCH ?= master
 GIT_BUNDLE=$(GIT_REPO)_$(GIT_BRANCH).bundle
-GIT_ARCHIVE=$(GIT_REPO)_$(GIT_BRANCH).tar.gz
+PACKAGENAME ?= $(GIT_REPO)
+VERSION ?= $(GIT_BRANCH)
+GIT_ARCHIVE=$(PACKAGENAME)-$(VERSION).tar.gz
 
-tar:
+clean-package:
+	if [ -d $(DESTDIR) ] ; then rm -rf $(DESTDIR) ; fi
+package: clean-package
+	if [ ! -d "$(DESTDIR)" ] ; then mkdir -p $(DESTDIR) ; fi
 	git archive $(GIT_BRANCH) | gzip > $(DESTDIR)/$(GIT_ARCHIVE)
 bundle:
 	git bundle create $(DESTDIR)/$(GIT_BUNDLE) $(GIT_BRANCH) && gzip -c $(DESTDIR)/$(GIT_BUNDLE) > $(DESTDIR)/$(GIT_BUNDLE).gz
 unbundle:
 	test -f $(DESTDIR)/$(GIT_BUNDLE).gz && gunzip -f $(DESTDIR)/$(GIT_BUNDLE).gz
+
+publish: $(DESTDIR)/$(PACKAGENAME)-$(VERSION).tar.gz
+	@echo "# $@ STARTING"
+	bash ./tools/publish.sh $(PACKAGENAME) $(VERSION)
+	@echo '# $@ SUCCESS'
