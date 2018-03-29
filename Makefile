@@ -85,6 +85,8 @@ list:
 	@echo "list: list stack"
 	@$(openstack_cli) stack list
 
+status:
+	@$(openstack_cli) stack list --property stack_name=$(stack_name)
 
 DESTDIR  ?= dist
 GIT_URL_REPO ?= $(shell git config --get remote.origin.url)
