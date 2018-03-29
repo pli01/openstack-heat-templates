@@ -73,7 +73,7 @@ is-ready-$(stack_name):
 	    echo "WAIT: $$n $$ret" ; \
 	    n=$$(( n+1 )) ; \
 	   if [ $$n -eq $$timeout ] ;then  ret=true ; fi \
-	done ; echo $?
+	done ; echo $$?
 
 clean: clean-$(stack_name)
 	@echo "clean: Stack $(stack_name) deleted"
