@@ -63,6 +63,7 @@ is-running-$(stack_name):
 	@if $(openstack_cli) stack show $(stack_name) ; then echo "$(stack_name) is running" ; $(FORCE) ; else true ; fi
 
 is-ready: show-$(stack_name) is-ready-$(stack_name)
+is-ready-$(stack_name): SHELL:=/bin/bash
 is-ready-$(stack_name):
 	@ret=false ; timeout=50 ; n=0 ; \
 	  while ! $$ret ; do \
@@ -71,7 +72,7 @@ is-ready-$(stack_name):
 	     done | grep "not ready" && ret=false || ret=true ; \
 	    echo "WAIT: $$n $$ret" ; \
 	    n=$$(( n+1 )) ; \
-	   [ $$n -eq $$timeout ] && ret=true ; \
+	   if [ $$n -eq $$timeout ] ;then  ret=true ; fi \
 	done ; echo $?
 
 clean: clean-$(stack_name)
