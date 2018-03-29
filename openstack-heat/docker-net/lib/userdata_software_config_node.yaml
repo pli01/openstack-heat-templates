@@ -229,17 +229,6 @@ resources:
           params:
             $config_file: /root/install_config_base.cfg
 
-  config_ansible:
-    type: "OS::Heat::SoftwareConfig"
-    properties:
-      group: ungrouped
-      config:
-        str_replace:
-          template: { get_file: ../config-scripts/genere_ansible_config.sh }
-          params:
-            $destfile: /root/ansible_config.yaml
-            $ansible_config: { get_file: ../config/100-ansible-env.yaml }
-
   install_docker_node:
     type: "OS::Heat::SoftwareConfig"
     properties:
