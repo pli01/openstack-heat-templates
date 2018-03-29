@@ -111,7 +111,7 @@ resources:
         - config: { get_resource: genere_ssh_config_custom }
         - config: { get_resource: add_etc_hosts }
         - config: { get_resource: install_config_custom }
-        - config: { get_resource: config_ansible }
+#        - config: { get_resource: config_ansible }
         - config: { get_resource: install_docker_node }
         - config: { get_resource: install_ci_tool_stack }
 
@@ -249,11 +249,11 @@ resources:
           template: { get_file: ../config-scripts/install_docker_node.sh }
           params:
             $config_file: /root/install_config_base.cfg
-            $ansible_config: /root/ansible_config.yaml
             $ansible_install_dir: /root
+            $install_url: { get_file: ../config/install_url.yml }
 
   install_ci_tool_stack:
-    type: OS::Heat::SoftwareConfig
+    type: "OS::Heat::SoftwareConfig"
     properties:
       group: ungrouped
       config:
