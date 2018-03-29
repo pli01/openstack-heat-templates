@@ -65,7 +65,7 @@ is-running-$(stack_name):
 is-ready: show-$(stack_name) is-ready-$(stack_name)
 is-ready-$(stack_name): SHELL:=/bin/bash
 is-ready-$(stack_name):
-	@ret=false ; timeout=50 ; n=0 ; \
+	@set +o pipefail ; ret=false ; timeout=50 ; n=0 ; \
 	  while ! $$ret ; do \
 	    $(openstack_cli)  server list -c Name -f csv --quote=none --name $(stack_name) | awk ' NR > 1 { print $$1 } ' | while read a ; do \
 	      ( set +o pipefail && $(openstack_cli) console log show $$a 2>&1 |grep -q 'FINISH: INSTANCE CONFIGURED' ) && echo "$$a ready" || echo "$$a not ready" ; \
