@@ -55,25 +55,19 @@ syntax-$(stack_name):
 show: show-$(stack_name)
 show-$(stack_name):
 	@echo "show-$(stack_name): show stack $(stack_name)"
-	@$(openstack_cli) stack show $(stack_name) || true
+	@$(openstack_cli) stack show -f json $(stack_name) || true
+	@echo
 
 is-running: is-running-$(stack_name)
 is-running-$(stack_name):
 	@echo "is-running-$(stack_name): show stack $(stack_name)"
-	@if $(openstack_cli) stack show $(stack_name) ; then echo "$(stack_name) is running" ; $(FORCE) ; else true ; fi
+	@if $(openstack_cli) stack show -f json $(stack_name) ; then echo ; echo "$(stack_name) is running" ; $(FORCE) ; else true ; fi
 
 is-ready: show-$(stack_name) is-ready-$(stack_name)
 is-ready-$(stack_name): SHELL:=/bin/bash
 is-ready-$(stack_name):
-	@set +o pipefail ; ret=false ; timeout=50 ; n=0 ; \
-	  while ! $$ret ; do \
-	    $(openstack_cli)  server list -c Name -f csv --quote=none --name $(stack_name) | awk ' NR > 1 { print $$1 } ' | while read a ; do \
-	      ( set +o pipefail && $(openstack_cli) console log show $$a 2>&1 |grep -q 'FINISH: INSTANCE CONFIGURED' ) && echo "$$a ready" || echo "$$a not ready" ; \
-	     done | grep "not ready" && ret=false || ret=true ; \
-	    echo "WAIT: $$n $$ret" ; \
-	    n=$$(( n+1 )) ; \
-	   if [ $$n -eq $$timeout ] ;then  ret=true ; fi \
-	done ; echo $$?
+	@openstack_cli="$(openstack_cli)" bash ./tools/stack-is-ready.sh "$(stack_name)"
+	echo "Stack $(stack_name) ready"
 
 clean: clean-$(stack_name)
 	@echo "clean: Stack $(stack_name) deleted"
