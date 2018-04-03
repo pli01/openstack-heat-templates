@@ -1,5 +1,6 @@
 #!/bin/bash
 #set -x
+set +e
 export stack_name=${1:? stack_name not defined}
 export openstack_cli=${openstack_cli:-openstack}
 
