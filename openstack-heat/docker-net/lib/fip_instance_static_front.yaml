@@ -135,7 +135,23 @@ parameters:
     description: front_ip_public
     default: "password"
 
+  wait_condition_timeout:
+    type: number
+    default: 6000
+    description : >
+      timeout for the Wait Conditions
+
 resources:
+  front_wait_handle:
+    type: OS::Heat::WaitConditionHandle
+
+  front_wait_condition:
+    type: OS::Heat::WaitCondition
+    depends_on: instance
+    properties:
+      handle: {get_resource: front_wait_handle}
+      timeout: {get_param: wait_condition_timeout}
+
   random:
     type: OS::Heat::RandomString
     properties:
@@ -222,6 +238,7 @@ resources:
       registry_username: { get_param: registry_username }
       registry_password: { get_param: registry_password }
       front_ip_public: { get_param: front_ip_public }
+      wc_notify: {get_attr: [front_wait_handle, curl_cli]}
 
 outputs:
   ip:

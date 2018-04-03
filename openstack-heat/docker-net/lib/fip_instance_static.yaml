@@ -114,8 +114,23 @@ parameters:
     type: string
     description: repository_password
     default: ""
+  wait_condition_timeout:
+    type: number
+    default: 6000
+    description : >
+      timeout for the Wait Conditions
 
 resources:
+  bastion_wait_handle:
+    type: OS::Heat::WaitConditionHandle
+
+  bastion_wait_condition:
+    type: OS::Heat::WaitCondition
+    depends_on: instance
+    properties:
+      handle: {get_resource: bastion_wait_handle}
+      timeout: {get_param: wait_condition_timeout}
+
   random:
     type: OS::Heat::RandomString
     properties:
@@ -199,6 +214,7 @@ resources:
       repository_srv: { get_param: repository_srv }
       repository_username: { get_param: repository_username }
       repository_password: { get_param: repository_password }
+      wc_notify: {get_attr: [bastion_wait_handle, curl_cli]}
 
 outputs:
   ip:

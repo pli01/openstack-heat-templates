@@ -17,7 +17,10 @@ set -x
 # Add OS config
 if [ -f /etc/debian_version ] ; then
   export DEBIAN_FRONTEND=noninteractive
+  export HOME=/root
   apt-get -qqy update
+  apt-get install -qqy curl
+  update-ca-certificates --fresh --verbose
 else
   yum -y update
 fi

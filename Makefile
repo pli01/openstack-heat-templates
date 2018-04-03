@@ -24,7 +24,7 @@ all:
 	@echo make build [stack_dir=$(stack_dir)] [stack_name=$(stack_name)]
 	@echo            [heat_template=$(heat_template)] [heat_parameters=$(heat_parameters)] [registry=$(registry)]
 
-build-all: syntax is-running clean build is-ready
+build-all: syntax is-running clean build show
 
 build: syntax build-$(stack_name)
 	@echo "build: Stack $(stack_name) created"

@@ -86,6 +86,10 @@ parameters:
     type: string
     description: repository_password
     default: ""
+  wc_notify:
+    type: string
+    description: wc_notify
+    default: ""
 
 resources:
   userdata:
@@ -102,6 +106,7 @@ resources:
         - config: { get_resource: genere_ssh_config_custom }
         - config: { get_resource: add_etc_hosts }
         - config: { get_resource: install_config_custom }
+        - config: { get_resource: instance_wc_notify }
 
   cloud_config_init:
     type: "OS::Heat::SoftwareConfig"
@@ -212,6 +217,22 @@ resources:
           params:
             $config_file: /root/install_config_base.cfg
 
+  instance_wc_notify:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: |
+            #!/bin/bash -v
+            export http_proxy=$http_proxy
+            export https_proxy=$http_proxy
+            export no_proxy=$no_proxy
+            $wc_notify --data-binary '{"status": "SUCCESS"}'
+          params:
+            $wc_notify: {get_param: wc_notify}
+            $no_proxy: { get_param: no_proxy }
+            $http_proxy: { get_param: http_proxy }
 outputs:
   userdata:
     value: { get_resource: userdata }

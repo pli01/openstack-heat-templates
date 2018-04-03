@@ -103,6 +103,10 @@ parameters:
     type: string
     description: front_ip_public
     default: "password"
+  wc_notify:
+    type: string
+    description: wc_notify
+    default: ""
 
 resources:
   userdata:
@@ -121,6 +125,7 @@ resources:
         - config: { get_resource: install_config_custom }
         - config: { get_resource: install_docker_node }
         - config: { get_resource: install_ci_tool_stack }
+        - config: { get_resource: instance_wc_notify }
 
   cloud_config_init:
     type: "OS::Heat::SoftwareConfig"
@@ -262,6 +267,22 @@ resources:
             $ansible_install_dir: /root
             $install_url: { get_file: ../config/ci-tool-stack/install_url.yml }
 
+  instance_wc_notify:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: |
+            #!/bin/bash -v
+            export http_proxy=$http_proxy
+            export https_proxy=$http_proxy
+            export no_proxy=$no_proxy
+            $wc_notify --data-binary '{"status": "SUCCESS"}'
+          params:
+            $wc_notify: {get_param: wc_notify}
+            $no_proxy: { get_param: no_proxy }
+            $http_proxy: { get_param: http_proxy }
 outputs:
   userdata:
     value: { get_resource: userdata }
