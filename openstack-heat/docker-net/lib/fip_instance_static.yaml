@@ -3,6 +3,118 @@ heat_template_version: 2015-10-15
 description: >
   Instance with UserData and FloatingIP
 
+parameters:
+  instance_basename:
+    type: string
+  key_name:
+    type: string
+    description: Name of keypair to assign to servers
+  security_group:
+    type: comma_delimited_list
+  network:
+    type: string
+  subnet:
+    type: string
+  image:
+    type: string
+  flavor:
+    type: string
+  floatingip_id:
+    type: string
+  prefix:
+    type: string
+  index:
+    type: number
+  vol_size:
+    type: number
+    description: The size of the Cinder volume for instance
+  vol_type:
+    type: string
+    description: The volume type of the Cinder volume for instance
+
+  http_proxy:
+    type: string
+    description: http_proxy
+    default: ""
+  no_proxy:
+    type: string
+    description: no_proxy
+    default: ""
+  deploy_account:
+    type: string
+    description: service_account
+    default: ""
+  deploy_account_ssh:
+    type: string
+    description: service_account_ssh
+    default: ""
+  deploy_private_key:
+    type: string
+    description: deploy_private_key
+    default: ""
+  deploy_public_key:
+    type: string
+    description: deploy_public_key
+    default: ""
+  dns_nameservers:
+    type: comma_delimited_list
+    label: DNS nameservers
+    description: 8.8.8.8,8.8.4.4
+  dns_domainname:
+    type: comma_delimited_list
+    label: DNS dns_domainname
+    description: domain.fr,domain.net
+  stack:
+    type: string
+    default: ""
+  context:
+    type: string
+    default: ""
+  front_bastion_subnet_prefix:
+    type: string
+    description: define ip format for bastion x.x.x.x{index}
+    default: ""
+  front_subnet_prefix:
+    type: string
+    description: define ip format for node x.x.x.x{index}
+    default: ""
+  front_node_count:
+    type: number
+    description: define the count of instance
+    default: 1
+  bastion_node_count:
+    type: number
+    description: define the count of instance
+    default: 1
+  back_subnet_prefix:
+    type: string
+    description: define ip format for node x.x.x.x{index}
+    default: ""
+  back_node_count:
+    type: number
+    description: define the count of instance
+    default: 0
+  backup_account:
+    type: string
+    description: backup_account
+    default: "backup"
+  env_file_system:
+    type: string
+    description: file system mounted
+    default: "/DATA"
+  repository_srv:
+    type: string
+    description: repository_srv
+    default: ""
+  repository_username:
+    type: string
+    description: repository_username
+    default: ""
+  repository_password:
+    type: string
+    description: repository_password
+    default: ""
+
 resources:
   random:
     type: OS::Heat::RandomString
@@ -20,7 +132,6 @@ resources:
           params:
             "bn%": { get_param: instance_basename }
             "rand%": { get_attr: [random, value] }
-#      name: { get_param: instance_basename }
       network_id: { get_param: network }
       security_groups: { get_param: security_group }
       fixed_ips:
@@ -47,7 +158,7 @@ resources:
       volume_type: { get_param: vol_type }
 
   instance:
-    depends_on: [ port ]
+    depends_on: [ port, bastion_userdata ]
 #    depends_on: [ port, root_volume ]
     type: OS::Nova::Server
     properties:
@@ -62,38 +173,32 @@ resources:
         - port: { get_resource: port }
       user_data_format: RAW
 #      user_data_format: SOFTWARE_CONFIG
-      user_data: { get_param: userdata }
+      user_data: { get_attr: [ bastion_userdata, userdata ] }
 
-parameters:
-  instance_basename:
-    type: string
-  key_name:
-    type: string
-    description: Name of keypair to assign to servers
-  security_group:
-    type: comma_delimited_list
-  network:
-    type: string
-  subnet:
-    type: string
-  userdata:
-    type: string
-  image:
-    type: string
-  flavor:
-    type: string
-  floatingip_id:
-    type: string
-  prefix:
-    type: string
-  index:
-    type: number
-  vol_size:
-    type: number
-    description: The size of the Cinder volume for instance
-  vol_type:
-    type: string
-    description: The volume type of the Cinder volume for instance
+  bastion_userdata:
+    type: Lib::Stack::UserData::Bastion
+    properties:
+      http_proxy: { get_param: http_proxy }
+      no_proxy: { get_param: no_proxy }
+      deploy_account: { get_param: deploy_account }
+      deploy_account_ssh: { get_param: deploy_account_ssh }
+      deploy_private_key: { get_param: deploy_private_key }
+      deploy_public_key: { get_param: deploy_public_key }
+      dns_nameservers: { get_param: dns_nameservers }
+      dns_domainname: { get_param: dns_domainname }
+      context: { get_param: context }
+      stack: { get_param: stack }
+      front_bastion_subnet_prefix: { get_param: front_bastion_subnet_prefix }
+      front_subnet_prefix: { get_param: front_subnet_prefix }
+      front_node_count: { get_param: front_node_count }
+      back_subnet_prefix: { get_param: back_subnet_prefix }
+      back_node_count: { get_param: back_node_count }
+      bastion_node_count: { get_param: bastion_node_count }
+      backup_account: { get_param: backup_account }
+      env_file_system: { get_param: env_file_system }
+      repository_srv: { get_param: repository_srv }
+      repository_username: { get_param: repository_username }
+      repository_password: { get_param: repository_password }
 
 outputs:
   ip:

@@ -119,7 +119,6 @@ resources:
         - config: { get_resource: genere_ssh_config_custom }
         - config: { get_resource: add_etc_hosts }
         - config: { get_resource: install_config_custom }
-#        - config: { get_resource: config_ansible }
         - config: { get_resource: install_docker_node }
         - config: { get_resource: install_ci_tool_stack }
 

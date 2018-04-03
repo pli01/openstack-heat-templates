@@ -370,7 +370,7 @@ resources:
             direction: ingress
 
   bastion_group:
-    depends_on: [ front_interface, bastion_securitygroup, bastion_userdata ]
+    depends_on: [ front_interface, bastion_securitygroup ]
     type: OS::Heat::ResourceGroup
     properties:
       count: { get_param: bastion_node_count }
@@ -382,7 +382,6 @@ resources:
             - { get_resource: bastion_securitygroup }
           network: { get_resource: front_network }
           subnet: { get_resource: front_subnet }
-          userdata: { get_attr: [ bastion_userdata, userdata ] }
           flavor: { get_param: bastion_flavor }
           image: { get_param: image }
           vol_size: { get_param: vol_size }
@@ -397,9 +396,30 @@ resources:
                 "stack%": { get_param: 'stack' }
                 "ctx%": {get_param: context}
                 "ress%": "bastion"
+          http_proxy: { get_param: http_proxy }
+          no_proxy: { get_param: no_proxy }
+          deploy_account: { get_param: deploy_account }
+          deploy_account_ssh: { get_param: deploy_account_ssh }
+          deploy_private_key: { get_attr: [ keypair, private_key ] }
+          deploy_public_key: { get_attr: [ keypair, public_key ] }
+          dns_nameservers: { get_param: dns_nameservers }
+          dns_domainname: { get_param: dns_domainname }
+          context: { get_param: context }
+          stack: { get_param: stack }
+          front_bastion_subnet_prefix: { get_param: front_bastion_subnet_prefix }
+          front_subnet_prefix: { get_param: front_subnet_prefix }
+          front_node_count: { get_param: front_node_count }
+          bastion_node_count: { get_param: bastion_node_count }
+          back_subnet_prefix: { get_param: back_subnet_prefix }
+          back_node_count: { get_param: back_node_count }
+          backup_account: { get_param: backup_account }
+          env_file_system: { get_param: env_file_system }
+          repository_srv: { get_param: repository_srv }
+          repository_username: { get_param: repository_username }
+          repository_password: { get_param: repository_password }
 
   front_node_group:
-    depends_on: [ front_interface, front_node_securitygroup, node_userdata ]
+    depends_on: [ front_interface, front_node_securitygroup ]
     type: OS::Heat::ResourceGroup
     properties:
       count: { get_param: front_node_count }
@@ -411,7 +431,6 @@ resources:
             - { get_resource: front_node_securitygroup }
           network: { get_resource: front_network }
           subnet: { get_resource: front_subnet }
-          userdata: { get_attr: [ node_userdata, userdata ] }
           flavor: { get_param: front_flavor }
           image: { get_param: image }
           vol_size: { get_param: vol_size }
@@ -427,9 +446,34 @@ resources:
                 "stack%": { get_param: 'stack' }
                 "ctx%": {get_param: context}
                 "ress%": "front-node"
+          http_proxy: { get_param: http_proxy }
+          no_proxy: { get_param: no_proxy }
+          deploy_account: { get_param: deploy_account }
+          deploy_account_ssh: { get_param: deploy_account_ssh }
+          deploy_private_key: { get_attr: [ keypair, private_key ] }
+          deploy_public_key: { get_attr: [ keypair, public_key ] }
+          dns_nameservers: { get_param: dns_nameservers }
+          dns_domainname: { get_param: dns_domainname }
+          context: { get_param: context }
+          stack: { get_param: stack }
+          front_bastion_subnet_prefix: { get_param: front_bastion_subnet_prefix }
+          front_subnet_prefix: { get_param: front_subnet_prefix }
+          front_node_count: { get_param: front_node_count }
+          back_subnet_prefix: { get_param: back_subnet_prefix }
+          back_node_count: { get_param: back_node_count }
+          bastion_node_count: { get_param: bastion_node_count }
+          backup_account: { get_param: backup_account }
+          env_file_system: { get_param: env_file_system }
+          repository_srv: { get_param: repository_srv }
+          repository_username: { get_param: repository_username }
+          repository_password: { get_param: repository_password }
+          registry_url: { get_param: registry_url }
+          registry_username: { get_param: registry_username }
+          registry_password: { get_param: registry_password }
+          front_ip_public: { get_param: front_ip_public }
 
   back_node_group:
-    depends_on: [ front_interface, front_node_securitygroup, node_userdata ]
+    depends_on: [ front_interface, front_node_securitygroup ]
     type: OS::Heat::ResourceGroup
     properties:
       count: { get_param: back_node_count }
@@ -441,7 +485,6 @@ resources:
             - { get_resource: front_node_securitygroup }
           network: { get_resource: front_network }
           subnet: { get_resource: front_subnet }
-          userdata: { get_attr: [ node_userdata, userdata ] }
           flavor: { get_param: front_flavor }
           image: { get_param: image }
           vol_size: { get_param: vol_size }
@@ -455,10 +498,6 @@ resources:
                 "stack%": { get_param: 'stack' }
                 "ctx%": {get_param: context}
                 "ress%": "back-node"
-
-  node_userdata:
-    type: Lib::Stack::UserData::Node
-    properties:
       http_proxy: { get_param: http_proxy }
       no_proxy: { get_param: no_proxy }
       deploy_account: { get_param: deploy_account }
@@ -484,31 +523,6 @@ resources:
       registry_username: { get_param: registry_username }
       registry_password: { get_param: registry_password }
       front_ip_public: { get_param: front_ip_public }
-
-  bastion_userdata:
-    type: Lib::Stack::UserData::Bastion
-    properties:
-      http_proxy: { get_param: http_proxy }
-      no_proxy: { get_param: no_proxy }
-      deploy_account: { get_param: deploy_account }
-      deploy_account_ssh: { get_param: deploy_account_ssh }
-      deploy_private_key: { get_attr: [ keypair, private_key ] }
-      deploy_public_key: { get_attr: [ keypair, public_key ] }
-      dns_nameservers: { get_param: dns_nameservers }
-      dns_domainname: { get_param: dns_domainname }
-      context: { get_param: context }
-      stack: { get_param: stack }
-      front_bastion_subnet_prefix: { get_param: front_bastion_subnet_prefix }
-      front_subnet_prefix: { get_param: front_subnet_prefix }
-      front_node_count: { get_param: front_node_count }
-      bastion_node_count: { get_param: bastion_node_count }
-      back_subnet_prefix: { get_param: back_subnet_prefix }
-      back_node_count: { get_param: back_node_count }
-      backup_account: { get_param: backup_account }
-      env_file_system: { get_param: env_file_system }
-      repository_srv: { get_param: repository_srv }
-      repository_username: { get_param: repository_username }
-      repository_password: { get_param: repository_password }
 
 outputs:
   base_name:
