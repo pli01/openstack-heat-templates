@@ -19,3 +19,7 @@ done | sort -n | tee -a /etc/hosts
 for i in $(seq 0  $(($bastion_node_count-1))) ; do
 echo "${front_bastion_subnet_prefix}$i ${stack}-$context-bastion-$i";
 done | sort -n | tee -a /etc/hosts
+for i in $(seq 0  $(($back_node_count-1))) ; do
+echo "${back_subnet_prefix}$i ${stack}-$context-back-node-$i";
+done | sort -n | tee -a /etc/hosts
+

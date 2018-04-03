@@ -19,6 +19,8 @@ write_files:
       export front_subnet_prefix="$front_subnet_prefix"
       export front_node_count="$front_node_count"
       export bastion_node_count="$bastion_node_count"
+      export back_subnet_prefix="$back_subnet_prefix"
+      export back_node_count="$back_node_count"
       export backup_account="$backup_account"
       export env_file_system="$env_file_system"
       export FRONT_IP_PUBLIC="$FRONT_IP_PUBLIC"

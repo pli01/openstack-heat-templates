@@ -42,6 +42,14 @@ parameters:
   front_gateway_ip:
     type: string
     default: "192.168.1.254"
+  back_node_count:
+    type: number
+    description: define the count of instance
+    default: 0
+  back_subnet_prefix:
+    type: string
+    description: define ip format for node x.x.x.x{index}
+    default: "192.168.2.2"
 
   dns_nameservers:
     type: comma_delimited_list
@@ -64,6 +72,12 @@ parameters:
     label: The flavor for front Instances
     description: flavor=xsmall
     default: small
+  back_flavor:
+    type: string
+    label: The flavor for back Instances
+    description: flavor=xsmall
+    default: small
+
   image:
     type: string
     label: The debian image based for Instances
@@ -414,6 +428,33 @@ resources:
                 "ctx%": {get_param: context}
                 "ress%": "front-node"
 
+  back_node_group:
+    depends_on: [ front_interface, front_node_securitygroup, node_userdata ]
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: { get_param: back_node_count }
+      resource_def:
+        type: "Lib::Stack::Instance::Static::Back"
+        properties:
+          key_name: { get_param: key_name }
+          security_group:
+            - { get_resource: front_node_securitygroup }
+          network: { get_resource: front_network }
+          subnet: { get_resource: front_subnet }
+          userdata: { get_attr: [ node_userdata, userdata ] }
+          flavor: { get_param: front_flavor }
+          image: { get_param: image }
+          vol_size: { get_param: vol_size }
+          vol_type: { get_param: vol_type }
+          index: "%index%"
+          prefix: { get_param: back_subnet_prefix }
+          instance_basename:
+            str_replace:
+              template: stack%-ctx%-ress%-%index%
+              params:
+                "stack%": { get_param: 'stack' }
+                "ctx%": {get_param: context}
+                "ress%": "back-node"
 
   node_userdata:
     type: Lib::Stack::UserData::Node
@@ -431,6 +472,8 @@ resources:
       front_bastion_subnet_prefix: { get_param: front_bastion_subnet_prefix }
       front_subnet_prefix: { get_param: front_subnet_prefix }
       front_node_count: { get_param: front_node_count }
+      back_subnet_prefix: { get_param: back_subnet_prefix }
+      back_node_count: { get_param: back_node_count }
       bastion_node_count: { get_param: bastion_node_count }
       backup_account: { get_param: backup_account }
       env_file_system: { get_param: env_file_system }
@@ -459,6 +502,8 @@ resources:
       front_subnet_prefix: { get_param: front_subnet_prefix }
       front_node_count: { get_param: front_node_count }
       bastion_node_count: { get_param: bastion_node_count }
+      back_subnet_prefix: { get_param: back_subnet_prefix }
+      back_node_count: { get_param: back_node_count }
       backup_account: { get_param: backup_account }
       env_file_system: { get_param: env_file_system }
       repository_srv: { get_param: repository_srv }

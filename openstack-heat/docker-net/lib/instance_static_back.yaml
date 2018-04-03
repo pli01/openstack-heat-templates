@@ -1,0 +1,88 @@
+heat_template_version: 2015-10-15
+
+description: >
+  Back Instance with UserData
+
+resources:
+  random:
+    type: OS::Heat::RandomString
+    properties:
+      length: 10
+      sequence: lettersdigits
+
+  port:
+    depends_on: [ random ]
+    type: OS::Neutron::Port
+    properties:
+      name:
+        str_replace:
+          template: bn%-rand%
+          params:
+            "bn%": { get_param: instance_basename }
+            "rand%": { get_attr: [random, value] }
+      network_id: { get_param: network }
+      security_groups: { get_param: security_group }
+      fixed_ips:
+        - subnet_id: { get_param: subnet }
+          ip_address:
+            str_replace:
+              template: prefix%index%
+              params:
+                "prefix%": { get_param: prefix }
+                "index%":  { get_param: index }
+
+  root_volume:
+    type: OS::Cinder::Volume
+    properties:
+      image: { get_param: image }
+      size: { get_param: vol_size }
+      volume_type: { get_param: vol_type }
+
+  instance:
+    depends_on: [ port ]
+    type: OS::Nova::Server
+    properties:
+      availability_zone: AZ2
+      name: { get_param: instance_basename }
+      key_name: { get_param: key_name }
+      block_device_mapping_v2: [{ device_name: "vda", volume_id : { get_resource : root_volume }, delete_on_termination : true }]
+#      image: { get_param: image }
+      flavor: { get_param: flavor }
+      networks:
+        - port: { get_resource: port }
+      user_data_format: RAW # with cloud-init only
+#      user_data_format: SOFTWARE_CONFIG
+      user_data: { get_param: userdata }
+
+parameters:
+  instance_basename:
+    type: string
+  key_name:
+    type: string
+    description: Name of keypair to assign to servers
+  security_group:
+    type: comma_delimited_list
+  network:
+    type: string
+  subnet:
+    type: string
+  userdata:
+    type: string
+  image:
+    type: string
+  flavor:
+    type: string
+  prefix:
+    type: string
+  index:
+    type: number
+  vol_size:
+    type: number
+    description: The size of the Cinder volume for instance
+  vol_type:
+    type: string
+    description: The volume type of the Cinder volume for instance
+
+outputs:
+  ip:
+    value: { get_attr: [ port, fixed_ips ] }

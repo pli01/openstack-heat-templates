@@ -58,6 +58,14 @@ parameters:
     type: number
     description: define the count of instance
     default: 1
+  back_subnet_prefix:
+    type: string
+    description: define ip format for node x.x.x.x{index}
+    default: ""
+  back_node_count:
+    type: number
+    description: define the count of instance
+    default: 0
   backup_account:
     type: string
     description: backup_account
@@ -140,6 +148,8 @@ resources:
             $front_subnet_prefix: { get_param: front_subnet_prefix }
             $front_node_count: { get_param: front_node_count }
             $bastion_node_count: { get_param: bastion_node_count }
+            $back_node_count: { get_param: back_node_count }
+            $back_subnet_prefix: { get_param: back_subnet_prefix }
             $backup_account: { get_param: backup_account }
             $env_file_system: { get_param: env_file_system }
             $deploy_public_key: { get_param: deploy_public_key }
