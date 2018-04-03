@@ -14,7 +14,7 @@ do
   for server in $server_list ; do
    ( set +o pipefail && ${openstack_cli} console log show $server 2>&1 |grep -q 'FINISH: INSTANCE CONFIGURED' ) && echo "$server ready" || echo "$server not ready"
   done | grep "not ready" && ret=1 || ret=0
-  echo "WAIT: $n $ret"
+  echo "WAIT: $n/$timeout $ret"
   n=$(( n+1 ))
 done
 exit $ret
