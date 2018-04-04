@@ -30,10 +30,9 @@ build: syntax build-$(stack_name)
 	@echo "build: Stack $(stack_name) created"
 build-$(stack_name):
 	@echo build-$(stack_name): create stack $(stack_name) from $(stack_dir)
-	@$(openstack_cli) stack create $(heat_template_opt) $(registry_opt) $(heat_parameters_opt) $(stack_name)
-	@$(openstack_cli) stack event list $(stack_name) || true
-	@while $(openstack_cli) stack show $(stack_name) -c stack_status -c stack_status_reason -f value | egrep  'PROGRESS' ; do $(openstack_cli) stack event list $(stack_name) ; done ; $(openstack_cli) stack event list $(stack_name)
-	@if $(openstack_cli) stack show $(stack_name) -c stack_status  -f value  | grep -q FAILED; then $(openstack_cli) stack show $(stack_name) -c stack_status -c stack_status_reason -f value ;  false; fi
+	@openstack_cli="$(openstack_cli)" \
+           heat_template_opt="$(heat_template_opt)" registry_opt="$(registry_opt)" heat_parameters_opt="$(heat_parameters_opt)" \
+           bash ./tools/stack-build.sh "$(stack_name)"
 
 syntax-heat-env:
 	@echo syntax-heat-env: $(registry) $(registry_path) $(registry_opt)
