@@ -16,6 +16,7 @@ until [ $timeout -eq 0 -o $ret -eq 0 ] ; do
   case "$stack_status" in
    *COMPLETE) ret=0 ;;
   esac
+  echo "WAIT stack ready ?: $timeout s"
   timeout=$(( timeout-1 ))
   ${openstack_cli} stack event list ${stack_name}
 done
