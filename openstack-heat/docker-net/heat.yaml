@@ -347,6 +347,38 @@ resources:
             port_range_max: 4789
             direction: ingress
 
+  back_node_securitygroup:
+      depends_on: [ random ]
+      type: OS::Neutron::SecurityGroup
+      properties:
+        name:
+          str_replace:
+            template: stack%-ctx%-ress%-rand%
+            params:
+              "stack%": { get_param: 'stack' }
+              "ctx%": {get_param: context}
+              "ress%": "back-node"
+              "rand%": { get_attr: [random, value] }
+        rules:
+          - remote_ip_prefix: { get_param: front_subnet_cidr }
+            protocol: tcp
+            port_range_min: 22
+            port_range_max: 22
+            direction: ingress
+          - remote_ip_prefix: { get_param: front_subnet_cidr }
+            protocol: tcp
+            port_range_min: 80
+            port_range_max: 80
+            direction: ingress
+          - remote_ip_prefix: { get_param: front_subnet_cidr }
+            protocol: tcp
+            port_range_min: 443
+            port_range_max: 443
+            direction: ingress
+          - remote_ip_prefix: { get_param: front_subnet_cidr }
+            protocol: icmp
+            direction: ingress
+
   bastion_securitygroup:
       depends_on: [ random ]
       type: OS::Neutron::SecurityGroup
@@ -473,16 +505,16 @@ resources:
           front_ip_public: { get_param: front_ip_public }
 
   back_node_group:
-    depends_on: [ front_interface, front_node_securitygroup ]
+    depends_on: [ front_interface, back_node_securitygroup ]
     type: OS::Heat::ResourceGroup
     properties:
       count: { get_param: back_node_count }
       resource_def:
-        type: "Lib::Stack::Instance::Static::Back"
+        type: "Lib::Stack::FIPInstance::Static::Back"
         properties:
           key_name: { get_param: key_name }
           security_group:
-            - { get_resource: front_node_securitygroup }
+            - { get_resource: back_node_securitygroup }
           network: { get_resource: front_network }
           subnet: { get_resource: front_subnet }
           flavor: { get_param: front_flavor }
@@ -523,6 +555,7 @@ resources:
           registry_username: { get_param: registry_username }
           registry_password: { get_param: registry_password }
           front_ip_public: { get_param: front_ip_public }
+          floatingip_network_name: { get_param: floatingip_network_name }
 
 outputs:
   base_name:
