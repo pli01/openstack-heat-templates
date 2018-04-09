@@ -517,7 +517,7 @@ resources:
             - { get_resource: back_node_securitygroup }
           network: { get_resource: front_network }
           subnet: { get_resource: front_subnet }
-          flavor: { get_param: front_flavor }
+          flavor: { get_param: back_flavor }
           image: { get_param: image }
           vol_size: { get_param: vol_size }
           vol_type: { get_param: vol_type }
