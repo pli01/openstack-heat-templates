@@ -378,6 +378,16 @@ resources:
           - remote_ip_prefix: { get_param: front_subnet_cidr }
             protocol: icmp
             direction: ingress
+          - remote_ip_prefix: { get_param: front_subnet_cidr }
+            protocol: tcp
+            port_range_min: 514
+            port_range_max: 514
+            direction: ingress
+          - remote_ip_prefix: { get_param: front_subnet_cidr }
+            protocol: udp
+            port_range_min: 514
+            port_range_max: 514
+            direction: ingress
 
   bastion_securitygroup:
       depends_on: [ random ]
