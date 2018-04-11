@@ -282,6 +282,12 @@ resources:
             direction: ingress
           - remote_ip_prefix: 0.0.0.0/0
             protocol: tcp
+            port_range_min: 24224
+            port_range_max: 24224
+            direction: ingress
+
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: tcp
             port_range_min: 389
             port_range_max: 389
             direction: ingress
@@ -387,6 +393,11 @@ resources:
             protocol: udp
             port_range_min: 514
             port_range_max: 514
+            direction: ingress
+          - remote_ip_prefix: { get_param: front_subnet_cidr }
+            protocol: tcp
+            port_range_min: 24224
+            port_range_max: 24224
             direction: ingress
 
   bastion_securitygroup:
