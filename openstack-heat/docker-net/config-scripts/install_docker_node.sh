@@ -50,6 +50,9 @@ bash -x build.sh
 
 # get custom environment config
 # TODO: use ansible extra-vars file -e @$ansible_env
+# disable user/group cache
+type -p nslcd && service nslcd stop
+type -p nscd && service nscd stop
 
 bash -x deploy.sh
 )
