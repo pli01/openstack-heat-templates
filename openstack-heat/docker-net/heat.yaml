@@ -247,30 +247,6 @@ resources:
             protocol: icmp
             direction: ingress
           - remote_ip_prefix: 0.0.0.0/0
-            protocol: 112
-            direction: ingress
-          - remote_ip_prefix: 0.0.0.0/0
-            protocol: tcp
-            port_range_min: 123
-            port_range_max: 123
-            direction: ingress
-          - remote_ip_prefix: 0.0.0.0/0
-            protocol: udp
-            port_range_min: 123
-            port_range_max: 123
-            direction: ingress
-
-          - remote_ip_prefix: 0.0.0.0/0
-            protocol: tcp
-            port_range_min: 53
-            port_range_max: 53
-            direction: ingress
-          - remote_ip_prefix: 0.0.0.0/0
-            protocol: udp
-            port_range_min: 53
-            port_range_max: 53
-            direction: ingress
-          - remote_ip_prefix: 0.0.0.0/0
             protocol: tcp
             port_range_min: 514
             port_range_max: 514
@@ -280,58 +256,25 @@ resources:
             port_range_min: 514
             port_range_max: 514
             direction: ingress
-          - remote_ip_prefix: 0.0.0.0/0
-            protocol: tcp
-            port_range_min: 24224
-            port_range_max: 24224
-            direction: ingress
-
-          - remote_ip_prefix: 0.0.0.0/0
-            protocol: tcp
-            port_range_min: 389
-            port_range_max: 389
-            direction: ingress
-          - remote_ip_prefix: 0.0.0.0/0
-            protocol: udp
-            port_range_min: 389
-            port_range_max: 389
-            direction: ingress
-          - remote_ip_prefix: 0.0.0.0/0
-            protocol: tcp
-            port_range_min: 25
-            port_range_max: 25
-            direction: ingress
-          - remote_ip_prefix: 0.0.0.0/0
-            protocol: udp
-            port_range_min: 25
-            port_range_max: 25
-            direction: ingress
-          - remote_ip_prefix: 0.0.0.0/0
-            protocol: tcp
-            port_range_min: 2379
-            port_range_max: 2379
-            direction: ingress
-
-          - remote_ip_prefix: 0.0.0.0/0
-            protocol: tcp
-            port_range_min: 5432
-            port_range_max: 5432
-            direction: ingress
-          - remote_ip_prefix: 0.0.0.0/0
-            protocol: tcp
-            port_range_min: 6379
-            port_range_max: 6379
-            direction: ingress
-          - remote_ip_prefix: 0.0.0.0/0
-            protocol: tcp
-            port_range_min: 9200
-            port_range_max: 9200
-            direction: ingress
+# proxyhttp
           - remote_ip_prefix: 0.0.0.0/0
             protocol: tcp
             port_range_min: 8888
             port_range_max: 8888
             direction: ingress
+# elastic
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: tcp
+            port_range_min: 9200
+            port_range_max: 9200
+            direction: ingress
+# fluentd
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: tcp
+            port_range_min: 24224
+            port_range_max: 24224
+            direction: ingress
+# docker swarm
           - remote_ip_prefix: 0.0.0.0/0
             protocol: tcp
             port_range_min: 2377
@@ -352,6 +295,73 @@ resources:
             port_range_min: 4789
             port_range_max: 4789
             direction: ingress
+# docker swarm
+# keepalived
+#          - remote_ip_prefix: 0.0.0.0/0
+#            protocol: 112
+#            direction: ingress
+# ntpd
+#          - remote_ip_prefix: 0.0.0.0/0
+#            protocol: tcp
+#            port_range_min: 123
+#            port_range_max: 123
+#            direction: ingress
+#          - remote_ip_prefix: 0.0.0.0/0
+#            protocol: udp
+#            port_range_min: 123
+#            port_range_max: 123
+#            direction: ingress
+# dns
+#          - remote_ip_prefix: 0.0.0.0/0
+#            protocol: tcp
+#            port_range_min: 53
+#            port_range_max: 53
+#            direction: ingress
+#          - remote_ip_prefix: 0.0.0.0/0
+#            protocol: udp
+#            port_range_min: 53
+#            port_range_max: 53
+#            direction: ingress
+# ldap
+#          - remote_ip_prefix: 0.0.0.0/0
+#            protocol: tcp
+#            port_range_min: 389
+#            port_range_max: 389
+#            direction: ingress
+#          - remote_ip_prefix: 0.0.0.0/0
+#            protocol: udp
+#            port_range_min: 389
+#            port_range_max: 389
+#            direction: ingress
+# smtp
+#          - remote_ip_prefix: 0.0.0.0/0
+#            protocol: tcp
+#            port_range_min: 25
+#            port_range_max: 25
+#            direction: ingress
+#          - remote_ip_prefix: 0.0.0.0/0
+#            protocol: udp
+#            port_range_min: 25
+#            port_range_max: 25
+#            direction: ingress
+# Etcd
+#          - remote_ip_prefix: 0.0.0.0/0
+#            protocol: tcp
+#            port_range_min: 2379
+#            port_range_max: 2379
+#            direction: ingress
+# postgresq
+#          - remote_ip_prefix: 0.0.0.0/0
+#            protocol: tcp
+#            port_range_min: 5432
+#            port_range_max: 5432
+#            direction: ingress
+# redis
+#          - remote_ip_prefix: 0.0.0.0/0
+#            protocol: tcp
+#            port_range_min: 6379
+#            port_range_max: 6379
+#            direction: ingress
 
   back_node_securitygroup:
       depends_on: [ random ]
