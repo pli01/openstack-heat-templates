@@ -25,7 +25,7 @@ parameters:
   front_node_count:
     type: number
     description: define the count of instance
-    default: 1
+    default: 0
   front_subnet_prefix:
     type: string
     description: define ip format for node x.x.x.x{index}
@@ -78,10 +78,20 @@ parameters:
     description: flavor=xsmall
     default: small
 
-  image:
+  bastion_image:
     type: string
-    label: The debian image based for Instances
-    description: image=debian-8-latest
+    label: The debian bastion_image based for Instances
+    description: bastion_image=debian-8-latest
+    default: debian-8-latest
+  front_image:
+    type: string
+    label: The debian front_image based for Instances
+    description: front_image=debian-8-latest
+    default: debian-8-latest
+  back_image:
+    type: string
+    label: The debian back_image based for Instances
+    description: back_image=debian-8-latest
     default: debian-8-latest
   vol_size:
     type: number
@@ -446,7 +456,7 @@ resources:
           network: { get_resource: front_network }
           subnet: { get_resource: front_subnet }
           flavor: { get_param: bastion_flavor }
-          image: { get_param: image }
+          image: { get_param: bastion_image }
           vol_size: { get_param: vol_size }
           vol_type: { get_param: vol_type }
           index: "%index%"
@@ -495,7 +505,7 @@ resources:
           network: { get_resource: front_network }
           subnet: { get_resource: front_subnet }
           flavor: { get_param: front_flavor }
-          image: { get_param: image }
+          image: { get_param: front_image }
           vol_size: { get_param: vol_size }
           vol_type: { get_param: vol_type }
           index: "%index%"
@@ -549,7 +559,7 @@ resources:
           network: { get_resource: front_network }
           subnet: { get_resource: front_subnet }
           flavor: { get_param: back_flavor }
-          image: { get_param: image }
+          image: { get_param: back_image }
           vol_size: { get_param: vol_size }
           vol_type: { get_param: vol_type }
           index: "%index%"
