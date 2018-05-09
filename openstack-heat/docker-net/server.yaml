@@ -21,6 +21,10 @@ parameters:
     type: string
     label: Name of keypair to assign to servers
     description: key_name=foo
+  availability_zone:
+    type: string
+    description: The Availability Zone to launch the instance.
+    default: nova
   bastion_node_count:
     type: number
     description: define the count of bastion instance
@@ -404,6 +408,13 @@ resources:
             protocol: icmp
             direction: ingress
 
+  anti-affinity_group:
+    type: OS::Nova::ServerGroup
+    properties:
+      name: hosts on separate compute nodes
+      policies:
+        - anti-affinity
+
   bastion_group:
     depends_on: [ bastion_securitygroup ]
     type: OS::Heat::ResourceGroup
@@ -413,6 +424,8 @@ resources:
         type: "Lib::Stack::FIPInstance::Static"
         properties:
           key_name: { get_param: key_name }
+          availability_zone: { get_param: availability_zone }
+          affinity_group: { get_resource: anti-affinity_group }
           security_group:
             - { get_resource: bastion_securitygroup }
           network: { get_param: front_network_id }
@@ -462,6 +475,8 @@ resources:
         type: "Lib::Stack::FIPInstance::Static::Front"
         properties:
           key_name: { get_param: key_name }
+          availability_zone: { get_param: availability_zone }
+          affinity_group: { get_resource: anti-affinity_group }
           security_group:
             - { get_resource: front_node_securitygroup }
           network: { get_param: front_network_id }
@@ -516,6 +531,8 @@ resources:
         type: "Lib::Stack::FIPInstance::Static::Back"
         properties:
           key_name: { get_param: key_name }
+          availability_zone: { get_param: availability_zone }
+          affinity_group: { get_resource: anti-affinity_group }
           security_group:
             - { get_resource: back_node_securitygroup }
           network: { get_param: front_network_id }
