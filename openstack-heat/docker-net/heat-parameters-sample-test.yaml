@@ -2,6 +2,7 @@ parameters:
   stack: docker
   context: test
   key_name: user-key
+  availability_zone: AZ1
   vol_size: 10
   vol_type: default
   bastion_flavor: small
@@ -43,7 +44,6 @@ parameters:
   repository_srv: 192.168.1.1
   repository_username: builder
   repository_password: password
-
-  registry_srv: 192.168.1.1
+  registry_url: 192.168.1.1
   registry_username: builder
   registry_password: password
