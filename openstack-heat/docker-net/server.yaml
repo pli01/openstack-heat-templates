@@ -128,10 +128,6 @@ parameters:
     type: string
     label: deploy_account_ssh
     description: deploy_account_ssh
-  router_id:
-    type: string
-    label: router_id
-    description: router_id
   vrrp_shared_ip:
     type: json
     label: vrrp_shared_ip

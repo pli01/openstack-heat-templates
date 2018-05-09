@@ -121,10 +121,6 @@ parameters:
     type: string
     label: deploy_account_ssh
     description: deploy_account_ssh
-  router_id:
-    type: string
-    label: router_id
-    description: router_id
   vrrp_shared_ip:
     type: json
     label: vrrp_shared_ip
@@ -184,6 +180,12 @@ resources:
 #    properties:
 #      prefix: { get_param: deploy_account }
 #
+  extrouter:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: { get_param: floatingip_network_name }
+
   front_network:
     depends_on: [ random ]
     type: OS::Neutron::Net
@@ -222,7 +224,7 @@ resources:
   front_interface:
     type: OS::Neutron::RouterInterface
     properties:
-      router_id: { get_param: router_id }
+      router_id: { get_resource: extrouter }
       subnet_id: { get_resource: front_subnet }
 
 #  front_node_securitygroup:
