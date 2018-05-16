@@ -4,6 +4,7 @@ parameters:
   key_name: user-key
   availability_zone: AZ1
   vol_size: 10
+  data_size: 10
   vol_type: default
   bastion_flavor: small
   bastion_image: debian9-latest

@@ -27,7 +27,10 @@ parameters:
     type: number
   vol_size:
     type: number
-    description: The size of the Cinder volume for instance
+    description: The size of the Cinder root volume for instance
+  data_size:
+    type: number
+    description: The size of the Cinder data volume for instance
   vol_type:
     type: string
     description: The volume type of the Cinder volume for instance
@@ -200,6 +203,18 @@ resources:
       size: { get_param: vol_size }
       volume_type: { get_param: vol_type }
 
+  data_volume:
+    type: OS::Cinder::Volume
+    properties:
+      size: { get_param: data_size }
+      volume_type: { get_param: vol_type }
+
+  data_volume_attachment:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      volume_id: { get_resource: data_volume }
+      instance_uuid: { get_resource: instance }
+
   instance:
     depends_on: [ port, node_userdata ]
     type: OS::Nova::Server
@@ -246,6 +261,7 @@ resources:
       registry_username: { get_param: registry_username }
       registry_password: { get_param: registry_password }
       front_ip_public: { get_param: front_ip_public }
+      data_volume: { get_resource: data_volume }
       wc_notify: {get_attr: [front_wait_handle, curl_cli]}
 
 outputs:

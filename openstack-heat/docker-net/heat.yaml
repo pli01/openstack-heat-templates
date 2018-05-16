@@ -99,7 +99,11 @@ parameters:
     default: debian-8-latest
   vol_size:
     type: number
-    description: The size of the Cinder volume for instance
+    description: The size of the Cinder root volume for instance
+    default: 10
+  data_size:
+    type: number
+    description: The size of the Cinder data volume for instance
     default: 10
   vol_type:
     type: string
@@ -473,6 +477,7 @@ resources:
           flavor: { get_param: bastion_flavor }
           image: { get_param: bastion_image }
           vol_size: { get_param: vol_size }
+          data_size: { get_param: data_size }
           vol_type: { get_param: vol_type }
           index: "%index%"
           prefix: { get_param: front_bastion_subnet_prefix }
@@ -524,6 +529,7 @@ resources:
           flavor: { get_param: front_flavor }
           image: { get_param: front_image }
           vol_size: { get_param: vol_size }
+          data_size: { get_param: data_size }
           vol_type: { get_param: vol_type }
           index: "%index%"
           prefix: { get_param: front_subnet_prefix }
@@ -580,6 +586,7 @@ resources:
           flavor: { get_param: back_flavor }
           image: { get_param: back_image }
           vol_size: { get_param: vol_size }
+          data_size: { get_param: data_size }
           vol_type: { get_param: vol_type }
           index: "%index%"
           prefix: { get_param: back_subnet_prefix }

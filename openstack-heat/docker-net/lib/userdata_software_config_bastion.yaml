@@ -90,6 +90,10 @@ parameters:
     type: string
     description: wc_notify
     default: ""
+  data_volume:
+    type: string
+    description: data_volume
+    default: ""
 
 resources:
   userdata:
@@ -102,6 +106,7 @@ resources:
         - config: { get_resource: config_base_generate }
         - config: { get_resource: write_nodnsupdate }
         - config: { get_resource: resolv_conf }
+        - config: { get_resource: mount_data_volume }
         - config: { get_resource: install_config_base }
         - config: { get_resource: genere_ssh_config_custom }
         - config: { get_resource: add_etc_hosts }
@@ -174,6 +179,16 @@ resources:
           template: { get_file: ../config-scripts/resolv_conf.sh }
           params:
             $config_file: /root/install_config_base.cfg
+
+  mount_data_volume:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: ../config-scripts/mount_data_volume.sh }
+          params:
+            $volume_id: { get_param: data_volume }
 
   install_config_base:
     type: "OS::Heat::SoftwareConfig"
