@@ -1,5 +1,6 @@
 parameters:
   key_name: user-key
+  availability_zone: nova
   vol_size: 10
   vol_type: default
   count: 1

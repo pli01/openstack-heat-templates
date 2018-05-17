@@ -50,6 +50,10 @@ parameters:
     type: string
     description: The volume type of the Cinder volume for instance
     default: default
+  availability_zone:
+    type: string
+    description: The Availability Zone to launch the instance.
+    default: nova
 
 resources:
   extrouter:
@@ -96,8 +100,15 @@ resources:
           protocol: icmp
           direction: ingress
 
+  anti-affinity_group:
+    type: OS::Nova::ServerGroup
+    properties:
+      policies:
+        - anti-affinity
+
   instance:
     type: OS::Heat::ResourceGroup
+    depends_on: [ extrouter, subnet, security_group, anti-affinity_group ]
     properties:
       count: { get_param: count }
       resource_def:
@@ -111,5 +122,7 @@ resources:
           network: { get_resource: network }
           security_groups: [ { get_resource: security_group } ]
           floatingip_network_name: { get_param: floatingip_network_name }
+          availability_zone: { get_param: availability_zone }
+          affinity_group: { get_resource: anti-affinity_group }
 
 outputs:
