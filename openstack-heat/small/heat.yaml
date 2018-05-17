@@ -132,10 +132,10 @@ resources:
       user_data:
         str_replace:
           template: |
-            #!/bin/bash -v
+            #!/bin/bash -x
             apt-get update -qqy
             apt-get install -qqy curl
-            $wc_notify --data-binary '{"status": "SUCCESS"}'
+            $wc_notify -k --data-binary '{"status": "SUCCESS"}'
           params:
             $wc_notify: {get_attr: [wait_handle, curl_cli]}
 
