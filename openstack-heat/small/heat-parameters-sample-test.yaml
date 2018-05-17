@@ -7,6 +7,6 @@ parameters:
   dns_nameservers: [ '192.168.1.1', '192.168.1.2' ]
   floatingip_network_name: default-ext-net
   subnet_cidr: "172.16.12.0/22"
-  subnet_start: "172.16.15.250"
+  subnet_start: "172.16.15.240"
   subnet_end: "172.16.15.252"
   gateway_ip: "172.16.15.254"
