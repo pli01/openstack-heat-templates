@@ -133,8 +133,9 @@ resources:
         str_replace:
           template: |
             #!/bin/bash -x
-            apt-get update -qqy
-            apt-get install -qqy curl
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update -qy
+            apt-get install -qy curl
             $wc_notify -k --data-binary '{"status": "SUCCESS"}'
           params:
             $wc_notify: {get_attr: [wait_handle, curl_cli]}
