@@ -10,15 +10,18 @@ export stack_name=${1:? stack_name not defined}
 ${openstack_cli} stack create ${heat_template_opt} ${registry_opt} ${heat_parameters_opt} ${stack_name}
 ${openstack_cli} stack event list ${stack_name} || true
 
-ret=1; timeout=1200; n=0
-until [ $timeout -eq 0 -o $ret -eq 0 ] ; do
+ret=255; timeout=1200; n=0
+until [ $timeout -eq 0 -o $ret -lt 255 ] ; do
+  ${openstack_cli} stack event list ${stack_name}
+  [ "$?" -gt 0 ] && ret=$?
   eval $(${openstack_cli} stack show ${stack_name} -c stack_status -c stack_status_reason -f shell )
+  echo "## $stack_status"
   case "$stack_status" in
    *COMPLETE) ret=0 ;;
+   *FAILED) ret=1 ;;
   esac
   echo "WAIT stack ready ?: $timeout s"
   timeout=$(( timeout-1 ))
-  ${openstack_cli} stack event list ${stack_name}
 done
 
 #${openstack_cli} stack event list ${stack_name}
