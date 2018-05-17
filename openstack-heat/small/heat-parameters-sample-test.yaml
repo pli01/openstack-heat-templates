@@ -1,6 +1,5 @@
 parameters:
   key_name: user-key
-  count: 1
   vol_size: 10
   vol_type: default
   flavor: small
