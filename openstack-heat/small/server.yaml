@@ -92,7 +92,8 @@ resources:
           template: |
             #!/bin/bash -x
             export DEBIAN_FRONTEND=noninteractive
-            apt-get update -qy
+            i=0
+            until apt-get update -qy ; do logger 'Wait network up $i/120'; sleep 1 ; let i=i+1 ; [ $i -gt 120 ] && exit 1  ; done
             apt-get install -qy curl
             $wc_notify -k --data-binary '{"status": "SUCCESS"}'
           params:
