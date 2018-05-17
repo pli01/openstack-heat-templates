@@ -1,0 +1,90 @@
+heat_template_version: 2015-10-15
+
+description: >
+  Build network, and deploy en instannce
+
+parameters:
+  key_name:
+    type: string
+    label: Name of keypair to assign to servers
+    description: key_name=foo
+  floatingip_network_name:
+    type: string
+    label: The Floating Network
+    description: floatingip_network_name=public
+  flavor:
+    type: string
+    label: The flavor for bastion Instances
+    description: flavor=small
+  image:
+    type: string
+    label: The debian image based for Instances
+    description: image=debian-8-latest
+    default: debian-8-latest
+  vol_size:
+    type: number
+    description: The size of the Cinder root volume for instance
+    default: 10
+  vol_type:
+    type: string
+    description: The volume type of the Cinder volume for instance
+    default: default
+  network:
+    type: string
+    description: network
+  security_groups:
+    type: comma_delimited_list
+    description: network
+
+resources:
+  wait_handle:
+    type: OS::Heat::WaitConditionHandle
+
+  wait_condition:
+    type: OS::Heat::WaitCondition
+    depends_on: instance
+    properties:
+      handle: {get_resource: wait_handle}
+      timeout: 6000
+
+  floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: {get_param: floatingip_network_name}
+      port_id: {get_resource: port}
+
+  port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_param: network }
+      security_groups: { get_param: security_groups }
+
+  root_volume:
+    type: OS::Cinder::Volume
+    properties:
+      image: { get_param: image }
+      size: { get_param: vol_size }
+      volume_type: { get_param: vol_type }
+
+  instance:
+    type: OS::Nova::Server
+    properties:
+      key_name: { get_param: key_name }
+      block_device_mapping_v2: [{ device_name: "vda", volume_id : { get_resource : root_volume }, delete_on_termination : true }]
+      flavor: { get_param: flavor }
+      networks:
+        - port: { get_resource: port }
+      user_data:
+        str_replace:
+          template: |
+            #!/bin/bash -x
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update -qy
+            apt-get install -qy curl
+            $wc_notify -k --data-binary '{"status": "SUCCESS"}'
+          params:
+            $wc_notify: {get_attr: [wait_handle, curl_cli]}
+
+outputs:
+  floating_ip_address:
+    value: { get_attr: [ floating_ip, floating_ip_address ] }

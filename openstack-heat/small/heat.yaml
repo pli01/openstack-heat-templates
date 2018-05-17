@@ -8,6 +8,11 @@ parameters:
     type: string
     label: Name of keypair to assign to servers
     description: key_name=foo
+  count:
+    type: number
+    label: number of instance
+    default: 1
+
   subnet_cidr:
     type: string
     default: "192.168.1.0/24"
@@ -91,55 +96,20 @@ resources:
           protocol: icmp
           direction: ingress
 
-  wait_handle:
-    type: OS::Heat::WaitConditionHandle
-
-  wait_condition:
-    type: OS::Heat::WaitCondition
-    depends_on: instance
-    properties:
-      handle: {get_resource: wait_handle}
-      timeout: 6000
-
-  floating_ip:
-    type: OS::Neutron::FloatingIP
-    properties:
-      floating_network: {get_param: floatingip_network_name}
-      port_id: {get_resource: port}
-
-  port:
-    type: OS::Neutron::Port
-    properties:
-      network_id: { get_resource: network }
-      security_groups:
-        - { get_resource: security_group }
-
-  root_volume:
-    type: OS::Cinder::Volume
-    properties:
-      image: { get_param: image }
-      size: { get_param: vol_size }
-      volume_type: { get_param: vol_type }
-
   instance:
-    type: OS::Nova::Server
+    type: OS::Heat::ResourceGroup
     properties:
-      key_name: { get_param: key_name }
-      block_device_mapping_v2: [{ device_name: "vda", volume_id : { get_resource : root_volume }, delete_on_termination : true }]
-      flavor: { get_param: flavor }
-      networks:
-        - port: { get_resource: port }
-      user_data:
-        str_replace:
-          template: |
-            #!/bin/bash -x
-            export DEBIAN_FRONTEND=noninteractive
-            apt-get update -qy
-            apt-get install -qy curl
-            $wc_notify -k --data-binary '{"status": "SUCCESS"}'
-          params:
-            $wc_notify: {get_attr: [wait_handle, curl_cli]}
+      count: { get_param: count }
+      resource_def:
+        type: server.yaml
+        properties:
+          key_name: { get_param: key_name }
+          image: { get_param : image }
+          flavor: { get_param: flavor }
+          vol_size: { get_param: vol_size }
+          vol_type: { get_param: vol_type }
+          network: { get_resource: network }
+          security_groups: [ { get_resource: security_group } ]
+          floatingip_network_name: { get_param: floatingip_network_name }
 
 outputs:
-  floating_ip_address:
-    value: { get_attr: [ floating_ip, floating_ip_address ] }
