@@ -231,6 +231,7 @@ resources:
 
   front_interface:
     type: OS::Neutron::RouterInterface
+    depends_on: [ front_subnet, extrouter ]
     properties:
       router_id: { get_resource: extrouter }
       subnet_id: { get_resource: front_subnet }
@@ -460,7 +461,7 @@ resources:
         - anti-affinity
 
   bastion_group:
-    depends_on: [ front_interface, bastion_securitygroup ]
+    depends_on: [ extrouter, front_interface, front_subnet, bastion_securitygroup, anti-affinity_group ]
     type: OS::Heat::ResourceGroup
     properties:
       count: { get_param: bastion_node_count }
@@ -512,7 +513,7 @@ resources:
           repository_password: { get_param: repository_password }
 
   front_node_group:
-    depends_on: [ front_interface, front_node_securitygroup ]
+    depends_on: [ extrouter, front_interface, front_subnet, front_node_securitygroup, anti-affinity_group ]
     type: OS::Heat::ResourceGroup
     properties:
       count: { get_param: front_node_count }
@@ -569,7 +570,7 @@ resources:
           front_ip_public: { get_param: front_ip_public }
 
   back_node_group:
-    depends_on: [ front_interface, back_node_securitygroup ]
+    depends_on: [ extrouter, front_interface, front_subnet, back_node_securitygroup, anti-affinity_group ]
     type: OS::Heat::ResourceGroup
     properties:
       count: { get_param: back_node_count }

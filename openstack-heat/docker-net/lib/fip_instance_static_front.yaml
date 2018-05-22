@@ -211,12 +211,13 @@ resources:
 
   data_volume_attachment:
     type: OS::Cinder::VolumeAttachment
+    depends_on: [ data_volume ]
     properties:
       volume_id: { get_resource: data_volume }
       instance_uuid: { get_resource: instance }
 
   instance:
-    depends_on: [ port, node_userdata ]
+    depends_on: [ port, root_volume, node_userdata ]
     type: OS::Nova::Server
     properties:
       availability_zone: { get_param: availability_zone }
