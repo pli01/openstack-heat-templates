@@ -56,6 +56,7 @@ resources:
 
   floating_ip:
     type: OS::Neutron::FloatingIP
+    depends_on: [ port ]
     properties:
       floating_network: {get_param: floatingip_network_name}
       port_id: {get_resource: port}
@@ -75,6 +76,7 @@ resources:
 
   instance:
     type: OS::Nova::Server
+    depends_on: [ port, root_volume ]
     properties:
       key_name: { get_param: key_name }
       availability_zone: { get_param: availability_zone }

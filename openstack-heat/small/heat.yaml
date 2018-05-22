@@ -67,6 +67,7 @@ resources:
 
   subnet:
     type: OS::Neutron::Subnet
+    depends_on: [ network ]
     properties:
       cidr: {get_param: subnet_cidr}
       network: {get_resource: network}
@@ -78,6 +79,7 @@ resources:
 
   interface:
     type: OS::Neutron::RouterInterface
+    depends_on: [ subnet, extrouter ]
     properties:
       router_id: { get_resource: extrouter }
       subnet_id: { get_resource: subnet }
@@ -108,7 +110,7 @@ resources:
 
   instance:
     type: OS::Heat::ResourceGroup
-    depends_on: [ extrouter, subnet, security_group, anti-affinity_group ]
+    depends_on: [ extrouter, interface, subnet, security_group, anti-affinity_group ]
     properties:
       count: { get_param: count }
       resource_def:
