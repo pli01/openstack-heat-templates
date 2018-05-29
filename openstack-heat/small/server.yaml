@@ -96,10 +96,14 @@ resources:
             export DEBIAN_FRONTEND=noninteractive
             i=0
             until apt-get update -qy ; do logger 'Wait network up $i/120'; sleep 1 ; let i=i+1 ; [ $i -gt 120 ] && exit 1  ; done
-            apt-get install -qy curl
-            $wc_notify -k --data-binary '{"status": "SUCCESS"}'
+            logger "test install curl nginx"
+            apt-get install -qy curl nginx
+            logger "test http://$fip"
+            curl -L --output /dev/null --silent --fail --insecure --write-out "%{http_code}" --connect-timeout 1 --retry 1 --retry-delay 1 --retry-max-time 1 --max-time 1 http://$fip
+            if [ "$?" == 0 ] ; then $wc_notify -k --data-binary '{"status": "SUCCESS"}' ; else $wc_notify -k --data-binary '{"status": "FAILURE"}' ; fi
           params:
             $wc_notify: {get_attr: [wait_handle, curl_cli]}
+            $fip: {get_attr: [ floating_ip, floating_ip_address ] }
 
 outputs:
   floating_ip_address:
