@@ -95,7 +95,7 @@ resources:
             #!/bin/bash -x
             export DEBIAN_FRONTEND=noninteractive
             i=0
-            until apt-get update -qy ; do logger 'Wait network up $i/120'; sleep 1 ; let i=i+1 ; [ $i -gt 120 ] && exit 1  ; done
+            until apt-get update -qy ; do logger "Wait network up $i/120"; sleep 1 ; let i=i+1 ; [ $i -gt 120 ] && exit 1  ; done
             logger "test install curl nginx"
             apt-get install -qy curl nginx
             logger "test http://$fip"
