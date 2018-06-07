@@ -7,6 +7,10 @@ export registry_opt=${registry_opt}
 export heat_parameters_opt=${heat_parameters_opt}
 export stack_name=${1:? stack_name not defined}
 
+# generate token
+os_token=$(${openstack_cli} token issue -f value -c id)
+[ -z "$os_token" ] || heat_parameters_opt="${heat_parameters_opt} --parameter os_token=${os_token}"
+
 ${openstack_cli} stack create ${heat_template_opt} ${registry_opt} ${heat_parameters_opt} ${stack_name}
 ${openstack_cli} stack event list ${stack_name} || true
 
