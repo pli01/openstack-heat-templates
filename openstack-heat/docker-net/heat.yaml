@@ -175,6 +175,19 @@ parameters:
     label: The Floating IP for Front
     description: front_ip_public
     default: ""
+  os_token:
+    type: string
+    description: os_token
+    default: ""
+  os_project_id:
+    type: string
+    description: project_id
+    default: ""
+  os_auth_url:
+    type: string
+    description: auth_url
+    default: ""
+
 
 resources:
   random:
@@ -624,6 +637,9 @@ resources:
           registry_password: { get_param: registry_password }
           front_ip_public: { get_param: front_ip_public }
           floatingip_network_name: { get_param: floatingip_network_name }
+          os_token: { get_param: os_token }
+          os_auth_url: { get_param: os_auth_url }
+          os_project_id: { get_param: os_project_id }
 
 outputs:
   base_name:

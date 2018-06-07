@@ -1,0 +1,12 @@
+#cloud-config
+merge_how: dict(recurse_array)+list(append)
+write_files:
+  - path: /root/openrc
+    owner: root:root
+    permissions: '0600'
+    content: |
+      #!/bin/bash -v
+      # generated openrc
+      export OS_TOKEN="$os_token"
+      export OS_PROJECT_ID="$os_project_id"
+      export OS_AUTH_URL="$os_auth_url"

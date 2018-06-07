@@ -112,6 +112,19 @@ parameters:
     description: data_volume
     default: ""
 
+  os_token:
+    type: string
+    description: os_token
+    default: ""
+  os_project_id:
+    type: string
+    description: project_id
+    default: ""
+  os_auth_url:
+    type: string
+    description: auth_url
+    default: ""
+
 resources:
   userdata:
     type: "OS::Heat::MultipartMime"
@@ -128,6 +141,7 @@ resources:
         - config: { get_resource: genere_ssh_config_custom }
         - config: { get_resource: add_etc_hosts }
         - config: { get_resource: install_config_custom }
+        - config: { get_resource: configure_openrc }
         - config: { get_resource: install_docker_node }
         - config: { get_resource: install_ci_tool_stack }
         - config: { get_resource: instance_wc_notify }
@@ -257,6 +271,18 @@ resources:
           template: { get_file: ../config-scripts/install_config_custom.sh }
           params:
             $config_file: /root/install_config_base.cfg
+
+  configure_openrc:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: ../config-scripts/write-openrc.yaml }
+          params:
+            $os_token: {get_param: os_token}
+            $os_project_id: { get_param: os_project_id }
+            $os_auth_url: { get_param: os_auth_url }
 
   install_docker_node:
     type: "OS::Heat::SoftwareConfig"
