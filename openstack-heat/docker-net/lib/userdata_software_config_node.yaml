@@ -280,8 +280,6 @@ resources:
         str_replace:
           template: { get_file: ../config-scripts/write-openrc.yaml }
           params:
-            $os_token: {get_param: os_token}
-            $os_project_id: { get_param: os_project_id }
             $os_auth_url: { get_param: os_auth_url }
 
   install_docker_node:

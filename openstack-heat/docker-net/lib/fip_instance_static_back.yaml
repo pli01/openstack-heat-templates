@@ -244,6 +244,9 @@ resources:
       user_data_format: RAW # with cloud-init only
 #      user_data_format: SOFTWARE_CONFIG
       user_data: { get_attr: [ node_userdata, userdata ] }
+      metadata:
+        os_token: { get_param: os_token }
+        os_project_id: { get_param: os_project_id }
 
   node_userdata:
     type: Lib::Stack::UserData::Node
@@ -274,9 +277,7 @@ resources:
       registry_password: { get_param: registry_password }
       front_ip_public: { get_param: front_ip_public }
       data_volume: { get_resource: data_volume }
-      os_token: { get_param: os_token }
       os_auth_url: { get_param: os_auth_url }
-      os_project_id: { get_param: os_project_id }
       wc_notify: {get_attr: [back_wait_handle, curl_cli]}
 
 outputs:

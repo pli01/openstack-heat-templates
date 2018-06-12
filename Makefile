@@ -60,7 +60,7 @@ show-$(stack_name):
 is-running: is-running-$(stack_name)
 is-running-$(stack_name):
 	@echo "is-running-$(stack_name): show stack $(stack_name)"
-	@if $(openstack_cli) stack show -f json $(stack_name) ; then echo ; echo "$(stack_name) is running" ; $(FORCE) ; else true ; fi
+	@if $(openstack_cli) stack show -f json $(stack_name) ; then echo ; echo "$(stack_name) is running" ; echo $(FORCE) ; else true ; fi
 
 is-ready: show-$(stack_name) is-ready-$(stack_name)
 is-ready-$(stack_name): SHELL:=/bin/bash
@@ -72,8 +72,12 @@ clean: clean-$(stack_name)
 	@echo "clean: Stack $(stack_name) deleted"
 clean-$(stack_name): 
 	@echo "clean-$(stack_name): delete stack $(stack_name)"
-	@$(openstack_cli) stack show $(stack_name) && $(openstack_cli) stack delete --yes $(stack_name) || true
-	@$(openstack_cli) stack event list $(stack_name) --follow || true
+	@if $(FORCE) ; then \
+           if $(openstack_cli) stack show $(stack_name) ;then \
+             $(openstack_cli) stack delete --yes $(stack_name) || true ; \
+             $(openstack_cli) stack event list $(stack_name) --follow || true ; \
+           fi ; \
+        else true ; fi
 
 list:
 	@echo "list: list stack"

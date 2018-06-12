@@ -5,8 +5,9 @@ write_files:
     owner: root:root
     permissions: '0600'
     content: |
-      #!/bin/bash -v
+      #!/bin/bash
       # generated openrc
-      export OS_TOKEN="$os_token"
-      export OS_PROJECT_ID="$os_project_id"
+      meta_data_json=$(http_proxy="" https_proxy="" /usr/bin/curl --fail -s http://169.254.169.254/openstack/latest/meta_data.json )
+      export OS_TOKEN="$(echo $meta_data_json | jq -r .meta.os_token)"
+      export OS_PROJECT_ID="$(echo $meta_data_json | jq -r .meta.os_project_id)"
       export OS_AUTH_URL="$os_auth_url"
