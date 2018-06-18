@@ -125,6 +125,13 @@ parameters:
     description: auth_url
     default: ""
 
+  install_url_docker:
+    type: string
+    default: ""
+  install_url_ci_tool_stack:
+    type: string
+    default: ""
+
 resources:
   userdata:
     type: "OS::Heat::MultipartMime"
@@ -292,7 +299,7 @@ resources:
           params:
             $config_file: /root/install_config_base.cfg
             $ansible_install_dir: /root
-            $install_url: { get_file: ../config/install_url.yml }
+            $install_url: { get_param: install_url_docker }
 
   install_ci_tool_stack:
     type: "OS::Heat::SoftwareConfig"
@@ -304,7 +311,7 @@ resources:
           params:
             $config_file: /root/install_config_base.cfg
             $ansible_install_dir: /root
-            $install_url: { get_file: ../config/ci-tool-stack/install_url.yml }
+            $install_url: { get_param: install_url_ci_tool_stack }
 
   instance_wc_notify:
     type: OS::Heat::SoftwareConfig

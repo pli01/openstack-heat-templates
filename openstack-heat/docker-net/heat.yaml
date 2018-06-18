@@ -188,6 +188,12 @@ parameters:
     description: auth_url
     default: ""
 
+  install_url_docker:
+    type: string
+    default: ""
+  install_url_ci_tool_stack:
+    type: string
+    default: ""
 
 resources:
   random:
@@ -581,6 +587,8 @@ resources:
           registry_username: { get_param: registry_username }
           registry_password: { get_param: registry_password }
           front_ip_public: { get_param: front_ip_public }
+          install_url_docker: { get_param: install_url_docker }
+          install_url_ci_tool_stack: { get_param: install_url_ci_tool_stack }
 
   back_node_group:
     depends_on: [ extrouter, front_interface, front_subnet, back_node_securitygroup, anti-affinity_group ]
@@ -640,6 +648,8 @@ resources:
           os_token: { get_param: os_token }
           os_auth_url: { get_param: os_auth_url }
           os_project_id: { get_param: os_project_id }
+          install_url_docker: { get_param: install_url_docker }
+          install_url_ci_tool_stack: { get_param: install_url_ci_tool_stack }
 
 outputs:
   base_name:

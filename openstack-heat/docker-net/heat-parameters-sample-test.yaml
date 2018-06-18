@@ -46,3 +46,6 @@ parameters:
   registry_url: 192.168.1.1
   registry_username: builder
   registry_password: password
+
+  install_url_docker: https://github.com/pli01/ansible-docker-host/archive/master.tar.gz
+  install_url_ci_tool_stack: https://github.com/pli01/ansible-role-service-ci-tool-stack/archive/master.tar.gz
