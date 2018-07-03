@@ -9,11 +9,11 @@ test -f "$config" || config=$config_file
 test -f "$config" && . "$config"
 echo "# config $config"
 #
-export HOME=/root
+export HOME=/home/deploy-user
 export DEBIAN_FRONTEND=noninteractive
-apt-get -qqy update
-apt-get install -qqy curl git ansible jq
-update-ca-certificates --fresh --verbose
+sudo apt-get -qqy update
+sudo apt-get install -qqy curl git ansible jq
+sudo update-ca-certificates --fresh --verbose
 
 export http_proxy
 export https_proxy
@@ -25,7 +25,7 @@ if [ ! -z "$REPOSITORY_USERNAME" -a ! -z "$REPOSITORY_PASSWORD" ]; then
 fi
 
 ansible_install_dir=$ansible_install_dir
-if [ -z "$ansible_install_dir" ] ; then
+if [ -z "${ansible_install_dir}" ] ; then
   ansible_install_dir=$(dirname $0)
 fi
 [ -d "${ansible_install_dir}" ] || mkdir -p ${ansible_install_dir}
@@ -47,12 +47,6 @@ cd $dest || exit 1
 
 # get roles
 bash -x build.sh
-
-# get custom environment config
-# TODO: use ansible extra-vars file -e @$ansible_env
-# disable user/group cache
-type -p nslcd && service nslcd stop
-type -p nscd && service nscd stop
 
 bash -x deploy.sh
 )

@@ -1,9 +1,9 @@
 #cloud-config
 merge_how: dict(recurse_array)+list(append)
 write_files:
-  - path: /root/install_config_base.cfg
-    owner: root:root
-    permissions: '0750'
+  - path: $destfile
+    owner: $owner
+    permissions: '0600'
     content: |
       # $destfile config generate from heat
       export http_proxy="$http_proxy"

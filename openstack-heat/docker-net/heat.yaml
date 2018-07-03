@@ -480,12 +480,13 @@ resources:
         - anti-affinity
 
   bastion_group:
-    depends_on: [ extrouter, front_interface, front_subnet, bastion_securitygroup, anti-affinity_group ]
+    depends_on: [ extrouter, front_interface, front_subnet, bastion_securitygroup, anti-affinity_group, front_node_group, back_node_group ]
     type: OS::Heat::ResourceGroup
     properties:
       count: { get_param: bastion_node_count }
       resource_def:
-        type: "Lib::Stack::FIPInstance::Static"
+#        type: "Lib::Stack::FIPInstance::Static"
+        type: "Lib::Stack::FIPInstance::Static::Bastion"
         properties:
           key_name: { get_param: key_name }
           availability_zone: { get_param: availability_zone }
@@ -530,6 +531,12 @@ resources:
           repository_srv: { get_param: repository_srv }
           repository_username: { get_param: repository_username }
           repository_password: { get_param: repository_password }
+          registry_url: { get_param: registry_url }
+          registry_username: { get_param: registry_username }
+          registry_password: { get_param: registry_password }
+          front_ip_public: { get_param: front_ip_public }
+          install_url_docker: { get_param: install_url_docker }
+          install_url_ci_tool_stack: { get_param: install_url_ci_tool_stack }
 
   front_node_group:
     depends_on: [ extrouter, front_interface, front_subnet, front_node_securitygroup, anti-affinity_group ]
