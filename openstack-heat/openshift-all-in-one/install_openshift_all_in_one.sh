@@ -75,12 +75,15 @@ curl -O -LS $ops_url && \
 cd ${ops_dirname}
 
 # configure openshift all in one
-cat <<EOF | patch -p1 -b
-diff --git a/inventory/hosts.localhost b/inventory/hosts.localhost
-index c611fa1..f3a1862 100644
---- a/inventory/hosts.localhost
-+++ b/inventory/hosts.localhost
-@@ -14,7 +14,17 @@ osm_cluster_network_cidr=10.128.0.0/14
+cat <<EOF | patch -p0 -b
+--- inventory/hosts.localhost.orig      2018-07-04 17:27:40.000000000 +0200
++++ inventory/hosts.localhost   2018-07-05 16:28:55.266000000 +0200
+@@ -10,11 +10,22 @@
+ #ansible_python_interpreter=/usr/bin/python3
+ openshift_deployment_type=origin
+ openshift_release=3.9
+-osm_cluster_network_cidr=10.128.0.0/14
++osm_cluster_network_cidr=172.18.0.0/16
  openshift_portal_net=172.30.0.0/16
  osm_host_subnet_length=9
  # localhost likely doesn't meet the minimum requirements
@@ -93,16 +96,22 @@ index c611fa1..f3a1862 100644
 +openshift_no_proxy='${no_proxy}'
 +openshift_enable_excluders=false
 +openshift_hostname_check=false
++template_service_broker_install=false
 +openshift_release=3.9
 +containerized=true
 +openshift_public_ip=${fip}
 
  [masters]
  localhost ansible_connection=local
-diff --git a/roles/openshift_repos/templates/CentOS-OpenShift-Origin.repo.j2 b/roles/openshift_repos/templates/CentOS-OpenShift-Origin.repo.j2
-index b0c036e..680cdb3 100644
---- a/roles/openshift_repos/templates/CentOS-OpenShift-Origin.repo.j2
-+++ b/roles/openshift_repos/templates/CentOS-OpenShift-Origin.repo.j2
+@@ -23,4 +34,5 @@
+ localhost ansible_connection=local
+
+ [nodes]
+-localhost  ansible_connection=local openshift_schedulable=true openshift_node_labels="{'region': 'infra', 'zone': 'default'}"
++#localhost  ansible_connection=local openshift_schedulable=true openshift_node_labels="{'region': 'infra', 'zone': 'default'}"
++localhost ansible_connection=local openshift_node_group_name="node-config-all-in-one"
+--- ./roles/openshift_repos/templates/CentOS-OpenShift-Origin.repo.j2.orig      2018-07-04 17:27:40.000000000 +0200
++++ ./roles/openshift_repos/templates/CentOS-OpenShift-Origin.repo.j2   2018-07-05 16:13:38.549000000 +0200
 @@ -1,6 +1,7 @@
  [centos-openshift-origin]
  name=CentOS OpenShift Origin
