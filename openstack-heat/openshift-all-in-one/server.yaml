@@ -1,0 +1,121 @@
+heat_template_version: 2015-10-15
+
+description: >
+  Build network, and deploy en instannce
+
+parameters:
+  key_name:
+    type: string
+    label: Name of keypair to assign to servers
+    description: key_name=foo
+  floatingip_network_name:
+    type: string
+    label: The Floating Network
+    description: floatingip_network_name=public
+  flavor:
+    type: string
+    label: The flavor for bastion Instances
+    description: flavor=small
+  image:
+    type: string
+    label: The debian image based for Instances
+    description: image=debian-8-latest
+    default: debian-8-latest
+  vol_size:
+    type: number
+    description: The size of the Cinder root volume for instance
+    default: 10
+  vol_type:
+    type: string
+    description: The volume type of the Cinder volume for instance
+    default: default
+  network:
+    type: string
+    description: network
+  security_groups:
+    type: comma_delimited_list
+    description: network
+  availability_zone:
+    type: string
+    description: The Availability Zone to launch the instance.
+    default: nova
+  affinity_group:
+    description: The affinity server group to launch the instance.
+    type: string
+  repository_srv:
+    type: string
+    default: ""
+  http_proxy:
+    type: string
+    default: ""
+  no_proxy:
+    type: string
+    default: ""
+  proxy_auth:
+    type: string
+    default: ""
+  origin_repo_url:
+    type: string
+    default: ""
+
+resources:
+  wait_handle:
+    type: OS::Heat::WaitConditionHandle
+
+  wait_condition:
+    type: OS::Heat::WaitCondition
+    depends_on: instance
+    properties:
+      handle: {get_resource: wait_handle}
+      timeout: 6000
+
+  floating_ip:
+    type: OS::Neutron::FloatingIP
+    depends_on: [ port ]
+    properties:
+      floating_network: {get_param: floatingip_network_name}
+      port_id: {get_resource: port}
+
+  port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_param: network }
+      security_groups: { get_param: security_groups }
+
+  root_volume:
+    type: OS::Cinder::Volume
+    properties:
+      image: { get_param: image }
+      size: { get_param: vol_size }
+      volume_type: { get_param: vol_type }
+
+  instance:
+    type: OS::Nova::Server
+    depends_on: [ port, root_volume ]
+    properties:
+      key_name: { get_param: key_name }
+      availability_zone: { get_param: availability_zone }
+      scheduler_hints:
+        group: { get_param: affinity_group }
+# Boot on ephemeral disk
+#      image: { get_param: image }
+# Boot on volume
+      block_device_mapping_v2: [{ device_name: "vda", volume_id : { get_resource : root_volume }, delete_on_termination : true }]
+      flavor: { get_param: flavor }
+      networks:
+        - port: { get_resource: port }
+      user_data:
+        str_replace:
+          template: { get_file: install_openshift_all_in_one.sh }
+          params:
+            $wc_notify: {get_attr: [wait_handle, curl_cli]}
+            $fip: {get_attr: [ floating_ip, floating_ip_address ] }
+            $repository_srv: {get_param: repository_srv }
+            $http_proxy: {get_param: http_proxy }
+            $no_proxy: {get_param: no_proxy }
+            $proxy_auth: {get_param: proxy_auth }
+            $origin_repo_url: {get_param: origin_repo_url }
+
+outputs:
+  floating_ip_address:
+    value: { get_attr: [ floating_ip, floating_ip_address ] }

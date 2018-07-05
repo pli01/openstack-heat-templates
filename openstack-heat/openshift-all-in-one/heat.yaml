@@ -1,0 +1,161 @@
+heat_template_version: 2015-10-15
+
+description: >
+  Build network, and deploy en instannce
+
+parameters:
+  key_name:
+    type: string
+    label: Name of keypair to assign to servers
+    description: key_name=foo
+  count:
+    type: number
+    label: number of instance
+    default: 1
+
+  subnet_cidr:
+    type: string
+    default: "192.168.1.0/24"
+  subnet_start:
+    type: string
+    default: "192.168.1.100"
+  subnet_end:
+    type: string
+    default: "192.168.1.200"
+  gateway_ip:
+    type: string
+    default: "192.168.1.254"
+  dns_nameservers:
+    type: comma_delimited_list
+    label: DNS nameservers
+    description: dns_nameservers=8.8.8.8,8.8.4.4
+  floatingip_network_name:
+    type: string
+    label: The Floating Network
+    description: floatingip_network_name=public
+  flavor:
+    type: string
+    label: The flavor for bastion Instances
+    description: flavor=small
+  image:
+    type: string
+    label: The debian image based for Instances
+    description: image=debian-8-latest
+    default: debian-8-latest
+  vol_size:
+    type: number
+    description: The size of the Cinder root volume for instance
+    default: 10
+  vol_type:
+    type: string
+    description: The volume type of the Cinder volume for instance
+    default: default
+  availability_zone:
+    type: string
+    description: The Availability Zone to launch the instance.
+    default: nova
+  repository_srv:
+    type: string
+    default: ""
+  http_proxy:
+    type: string
+    default: ""
+  no_proxy:
+    type: string
+    default: ""
+  proxy_auth:
+    type: string
+    default: ""
+  origin_repo_url:
+    type: string
+    default: ""
+
+
+resources:
+  extrouter:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: { get_param: floatingip_network_name }
+
+  network:
+    type: OS::Neutron::Net
+
+  subnet:
+    type: OS::Neutron::Subnet
+    depends_on: [ network ]
+    properties:
+      cidr: {get_param: subnet_cidr}
+      network: {get_resource: network}
+      allocation_pools: [{"start" : {get_param: subnet_start}, "end" : {get_param: subnet_end}}]
+      dns_nameservers: {get_param: dns_nameservers}
+      enable_dhcp: True
+      gateway_ip: {get_param: gateway_ip}
+      ip_version: 4
+
+  interface:
+    type: OS::Neutron::RouterInterface
+    depends_on: [ subnet, extrouter ]
+    properties:
+      router_id: { get_resource: extrouter }
+      subnet_id: { get_resource: subnet }
+
+  security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+        - remote_ip_prefix: 0.0.0.0/0
+          protocol: tcp
+          port_range_min: 22
+          port_range_max: 22
+          direction: ingress
+        - remote_ip_prefix: 0.0.0.0/0
+          protocol: tcp
+          port_range_min: 80
+          port_range_max: 80
+          direction: ingress
+        - remote_ip_prefix: 0.0.0.0/0
+          protocol: tcp
+          port_range_min: 443
+          port_range_max: 443
+          direction: ingress
+        - remote_ip_prefix: 0.0.0.0/0
+          protocol: tcp
+          port_range_min: 8443
+          port_range_max: 8443
+          direction: ingress
+        - remote_ip_prefix: 0.0.0.0/0
+          protocol: icmp
+          direction: ingress
+
+  anti-affinity_group:
+    type: OS::Nova::ServerGroup
+    properties:
+      policies:
+        - anti-affinity
+
+  instance:
+    type: OS::Heat::ResourceGroup
+    depends_on: [ extrouter, interface, subnet, security_group, anti-affinity_group ]
+    properties:
+      count: { get_param: count }
+      resource_def:
+        type: server.yaml
+        properties:
+          key_name: { get_param: key_name }
+          image: { get_param : image }
+          flavor: { get_param: flavor }
+          vol_size: { get_param: vol_size }
+          vol_type: { get_param: vol_type }
+          network: { get_resource: network }
+          security_groups: [ { get_resource: security_group } ]
+          floatingip_network_name: { get_param: floatingip_network_name }
+          availability_zone: { get_param: availability_zone }
+          affinity_group: { get_resource: anti-affinity_group }
+          repository_srv: {get_param: repository_srv }
+          http_proxy: {get_param: http_proxy }
+          no_proxy: {get_param: no_proxy }
+          proxy_auth: {get_param: proxy_auth }
+          origin_repo_url: {get_param: origin_repo_url }
+
+outputs:
