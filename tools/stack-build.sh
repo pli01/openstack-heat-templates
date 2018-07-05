@@ -8,13 +8,14 @@ export heat_parameters_opt=${heat_parameters_opt}
 export stack_name=${1:? stack_name not defined}
 
 # generate token
+if [ -z "$TOKEN_DISABLE" ] ; then
 echo "# generate token"
 eval $(${openstack_cli} token issue -f shell -c id -c project_id)
 os_token=${id:-}
 os_project_id=${project_id:-}
 [ -z "$os_token" ] || heat_parameters_opt="${heat_parameters_opt} --parameter os_token=${os_token}"
 [ -z "$os_project_id" ] || heat_parameters_opt="${heat_parameters_opt} --parameter os_project_id=${os_project_id}"
-
+fi
 echo "# stack $stack_name exists ?"
 if ${openstack_cli} stack show ${stack_name} ; then
   echo "stack $stack_name update: $?"
