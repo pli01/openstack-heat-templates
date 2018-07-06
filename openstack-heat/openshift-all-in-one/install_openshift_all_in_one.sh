@@ -2,12 +2,23 @@
 set -ex
 
 # Config env
-repository_srv="$repository_srv"
-http_proxy="$http_proxy"
-no_proxy="$no_proxy"
-proxy_auth='$proxy_auth'
-origin_repo_url="$origin_repo_url"
-fip=$fip
+export http_proxy="$http_proxy"
+export https_proxy="$http_proxy"
+export no_proxy="$no_proxy"
+export repository_srv="$repository_srv"
+export proxy_auth='$proxy_auth'
+export origin_repo_url="$origin_repo_url"
+export fip=$fip
+
+notify() {
+if [ "$?" -eq 0 ] ; then
+  $wc_notify -k --data-binary '{"status": "SUCCESS"}'
+else
+  $wc_notify -k --data-binary '{"status": "FAILURE"}'
+fi
+}
+
+trap notify EXIT KILL QUIT
 
 ip=$(ip add  |grep inet.*eth0 | awk ' { print $2 }' | awk -F/ ' { print $1 } ')
 net=$(ip add  |grep inet.*eth0 | awk ' { print $2 }')
@@ -77,8 +88,8 @@ cd ${ops_dirname}
 # configure openshift all in one
 cat <<EOF | patch -p0 -b
 --- inventory/hosts.localhost.orig      2018-07-04 17:27:40.000000000 +0200
-+++ inventory/hosts.localhost   2018-07-05 16:28:55.266000000 +0200
-@@ -10,11 +10,22 @@
++++ inventory/hosts.localhost   2018-07-05 17:52:39.520654856 +0200
+@@ -10,11 +10,24 @@
  #ansible_python_interpreter=/usr/bin/python3
  openshift_deployment_type=origin
  openshift_release=3.9
@@ -100,16 +111,18 @@ cat <<EOF | patch -p0 -b
 +openshift_release=3.9
 +containerized=true
 +openshift_public_ip=${fip}
++openshift_router_selector='node-router=true'
++openshift_registry_selector='node-registry=true'
 
  [masters]
  localhost ansible_connection=local
-@@ -23,4 +34,5 @@
+@@ -23,4 +36,5 @@
  localhost ansible_connection=local
 
  [nodes]
 -localhost  ansible_connection=local openshift_schedulable=true openshift_node_labels="{'region': 'infra', 'zone': 'default'}"
 +#localhost  ansible_connection=local openshift_schedulable=true openshift_node_labels="{'region': 'infra', 'zone': 'default'}"
-+localhost ansible_connection=local openshift_node_group_name="node-config-all-in-one"
++localhost ansible_connection=local openshift_node_group_name="node-config-all-in-one" openshift_schedulable=true openshift_node_labels="{ 'node-router': 'true', 'node-registry': 'true', 'node-app': 'true' }"
 --- ./roles/openshift_repos/templates/CentOS-OpenShift-Origin.repo.j2.orig      2018-07-04 17:27:40.000000000 +0200
 +++ ./roles/openshift_repos/templates/CentOS-OpenShift-Origin.repo.j2   2018-07-05 16:13:38.549000000 +0200
 @@ -1,6 +1,7 @@
@@ -134,11 +147,17 @@ export https_proxy=${https_proxy}
 export no_proxy=${no_proxy}
 export fip=${fip}
 
+service nslcd stop
+service nscd stop
+
+export ANSIBLE_LOG_PATH=$HOME/ansible.log
 cd ${ops_dirname}
 ansible-playbook -i inventory/hosts.localhost playbooks/prerequisites.yml
 ansible-playbook -i inventory/hosts.localhost playbooks/deploy_cluster.yml
+
+service nslcd stop
+service nscd stop
 EOD
 
-true
-if [ "$?" == 0 ] ; then $wc_notify -k --data-binary '{"status": "SUCCESS"}' ; else $wc_notify -k --data-binary '{"status": "FAILURE"}' ; fi
+echo "Reboot" && notify
 reboot
