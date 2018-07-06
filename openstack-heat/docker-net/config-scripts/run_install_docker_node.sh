@@ -1,9 +1,18 @@
 #!/bin/bash
-set -x
+set -xe
+function clean() {
+[ "$?" -gt 0 ] && notify_failure "Deploy $0: $?"
+}
+trap clean EXIT QUIT KILL
 
 export HOME=/home/deploy-user
 ansible_install_dir=/home/deploy-user
 deploy_script=install_docker_node
+
+[ -f $(dirname $0)/common_functions.sh ] && source $(dirname $0)/common_functions.sh
+[ -f ${ansible_install_dir}/common_functions.sh ] && source ${ansible_install_dir}/common_functions.sh
+
+# genere run_script
 cat > ${ansible_install_dir}/run_${deploy_script}.sh <<'EOF'
 #!/bin/bash
 set -x
@@ -37,11 +46,30 @@ bash -x ${script_name}
 )
 EOF
 
-[ -f $(dirname $0)/common_functions.sh ] && source $(dirname $0)/common_functions.sh
-[ -f ${ansible_install_dir}/common_functions.sh ] && source ${ansible_install_dir}/common_functions.sh
+# genere run_systemd
+cat > /etc/systemd/system/run_${deploy_script}.service <<EOF
+[Unit]
+Description="run_${deploy_script}"
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=${ansible_install_dir}
+ExecReload=/bin/su - deploy-user -s /bin/bash -c ${ansible_install_dir}/run_${deploy_script}.sh
+ExecStart=/bin/su - deploy-user -s /bin/bash -c ${ansible_install_dir}/run_${deploy_script}.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl enable run_${deploy_script}
+systemctl daemon-reload
+
 chmod +x ${ansible_install_dir}/run_${deploy_script}.sh
 chown deploy-user. -R ${ansible_install_dir}
-su - deploy-user -s /bin/bash -c ${ansible_install_dir}/run_${deploy_script}.sh
+#su - deploy-user -s /bin/bash -c ${ansible_install_dir}/run_${deploy_script}.sh
+service run_${deploy_script} start
 ret=$?
 echo "Deploy ${deploy_script} $ret"
 [ "$ret" -gt 0 ] && notify_failure "Deploy ${deploy_script} $ret failed"
