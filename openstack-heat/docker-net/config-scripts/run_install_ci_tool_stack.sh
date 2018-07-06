@@ -32,6 +32,7 @@ fi
 export ANSIBLE_CONNECTION=smart
 export ANSIBLE_DEPLOY_LIMIT=all
 export ANSIBLE_BECOME_FLAGS="-E -H -S -n"
+export ANSIBLE_LOG_PATH=$HOME/${script_name}.log
 bash -x ${script_name}
 )
 EOF
