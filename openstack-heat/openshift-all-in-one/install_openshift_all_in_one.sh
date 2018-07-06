@@ -9,6 +9,7 @@ export repository_srv="$repository_srv"
 export proxy_auth='$proxy_auth'
 export origin_repo_url="$origin_repo_url"
 export fip=$fip
+export HOME=/root
 
 notify() {
 if [ "$?" -eq 0 ] ; then
@@ -102,7 +103,7 @@ cat <<EOF | patch -p0 -b
 +openshift_disable_check=disk_availability,memory_availability,docker_storage,docker_image_availability
 +openshift_node_groups=[{'name': 'node-config-all-in-one', 'labels': ['node-role.kubernetes.io/master=true', 'node-role.kubernetes.io/infra=true', 'node-role.kubernetes.io/compute=true']}]
 +openshift_http_proxy=${http_proxy}
-+
++openshift_master_identity_providers=[{'name': 'allow_all', 'login': 'true', 'challenge': 'true', 'kind': 'AllowAllPasswordIdentityProvider'}]
 +openshift_https_proxy=${https_proxy}
 +openshift_no_proxy='${no_proxy}'
 +openshift_enable_excluders=false
