@@ -8,7 +8,13 @@ config="$(dirname $0)/install_config_base.cfg"
 test -f "$config" || config=$config_file
 test -f "$config" && . "$config"
 echo "# config $config"
-#
+
+# get playbook
+URL="$install_url"
+[ -z "$URL" ] && URL=https://github.com/pli01/ansible-docker-host/archive/master.tar.gz
+
+dest=ansible-docker-host
+
 export HOME=/home/deploy-user
 export DEBIAN_FRONTEND=noninteractive
 sudo apt-get -qqy update
@@ -32,13 +38,11 @@ fi
 (
 cd ${ansible_install_dir}
 
-# get playbook
-URL="$install_url"
-[ -z "$URL" ] && URL=https://github.com/pli01/ansible-docker-host/archive/master.tar.gz
-
-dest=ansible-docker-host
+if [ -d "$dest" ] ; then
+  rm -rf "$dest"
+fi
 if [ ! -d "$dest" ] ; then
-   mkdir -p $dest
+  mkdir -p $dest
 fi
 
 curl $curl_args -L -k -sSf -o - $URL | tar -zxvf -  --strip=1 -C $dest
