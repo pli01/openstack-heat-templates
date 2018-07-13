@@ -142,13 +142,13 @@ resources:
         - config: { get_resource: config_base_user }
         - config: { get_resource: config_base_generate }
         - config: { get_resource: write_nodnsupdate }
+        - config: { get_resource: configure_openrc }
         - config: { get_resource: resolv_conf }
         - config: { get_resource: mount_data_volume }
         - config: { get_resource: install_config_base }
         - config: { get_resource: genere_ssh_config_custom }
         - config: { get_resource: add_etc_hosts }
         - config: { get_resource: install_config_custom }
-        - config: { get_resource: configure_openrc }
         - config: { get_resource: install_docker_node }
         - config: { get_resource: install_ci_tool_stack }
         - config: { get_resource: instance_wc_notify }
@@ -210,6 +210,8 @@ resources:
             $REPOSITORY_URL: { get_param: repository_srv }
             $REPOSITORY_USERNAME: { get_param: repository_username }
             $REPOSITORY_PASSWORD: { get_param: repository_password }
+            $INSTALL_URL_DOCKER: { get_param: install_url_docker }
+            $INSTALL_URL_CI_TOOL_STACK: { get_param: install_url_ci_tool_stack }
   
   write_nodnsupdate:
     type: "OS::Heat::SoftwareConfig"
@@ -299,7 +301,6 @@ resources:
           params:
             $config_file: /root/install_config_base.cfg
             $ansible_install_dir: /root
-            $install_url: { get_param: install_url_docker }
 
   install_ci_tool_stack:
     type: "OS::Heat::SoftwareConfig"
@@ -311,7 +312,6 @@ resources:
           params:
             $config_file: /root/install_config_base.cfg
             $ansible_install_dir: /root
-            $install_url: { get_param: install_url_ci_tool_stack }
 
   instance_wc_notify:
     type: OS::Heat::SoftwareConfig

@@ -10,10 +10,12 @@ test -f "$config" && . "$config"
 echo "# config $config"
 
 # get playbook
-URL="$install_url"
-[ -z "$URL" ] && URL=https://github.com/pli01/ansible-docker-host/archive/master.tar.gz
-
+URL="$INSTALL_URL_DOCKER"
+# URL=https://github.com/pli01/ansible-docker-host/archive/master.tar.gz
 dest=ansible-docker-host
+
+[ -z "$URL" ] && exit 1
+
 
 export HOME=/home/deploy-user
 export DEBIAN_FRONTEND=noninteractive

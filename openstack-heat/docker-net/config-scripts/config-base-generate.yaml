@@ -30,3 +30,5 @@ write_files:
       export REPOSITORY_URL="$REPOSITORY_URL"
       export REPOSITORY_USERNAME="$REPOSITORY_USERNAME"
       export REPOSITORY_PASSWORD="$REPOSITORY_PASSWORD"
+      export INSTALL_URL_DOCKER="$install_url_docker"
+      export INSTALL_URL_CI_TOOL_STACK="$install_url_ci_tool_stack"

@@ -214,6 +214,8 @@ resources:
             $REPOSITORY_URL: { get_param: repository_srv }
             $REPOSITORY_USERNAME: { get_param: repository_username }
             $REPOSITORY_PASSWORD: { get_param: repository_password }
+            $INSTALL_URL_DOCKER: { get_param: install_url_docker }
+            $INSTALL_URL_CI_TOOL_STACK: { get_param: install_url_ci_tool_stack }
   
   write_nodnsupdate:
     type: "OS::Heat::SoftwareConfig"
@@ -324,7 +326,6 @@ resources:
               params:
                 $config_file: /home/deploy-user/install_config_base.cfg
                 $ansible_install_dir: /home/deploy-user
-                $install_url: { get_param: install_url_docker }
 
   copy_install_ci_tool_stack:
     type: OS::Heat::CloudConfig
@@ -340,7 +341,6 @@ resources:
               params:
                 $config_file: /home/deploy-user/install_config_base.cfg
                 $ansible_install_dir: /home/deploy-user
-                $install_url: { get_param: install_url_ci_tool_stack }
 
   run_install_ci_tool_stack:
     type: "OS::Heat::SoftwareConfig"

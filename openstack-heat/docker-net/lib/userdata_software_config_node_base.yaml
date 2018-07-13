@@ -125,13 +125,6 @@ parameters:
     description: auth_url
     default: ""
 
-  install_url_docker:
-    type: string
-    default: ""
-  install_url_ci_tool_stack:
-    type: string
-    default: ""
-
 resources:
   userdata:
     type: "OS::Heat::MultipartMime"
