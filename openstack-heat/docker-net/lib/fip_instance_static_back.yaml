@@ -254,8 +254,6 @@ resources:
         os_token: { get_param: os_token }
         os_project_id: { get_param: os_project_id }
         os_auth_url: { get_param: os_auth_url }
-        install_url_docker: { get_param: install_url_docker }
-        install_url_ci_tool_stack: { get_param: install_url_ci_tool_stack }
 
   node_userdata:
     type: Lib::Stack::UserData::Node
@@ -288,8 +286,6 @@ resources:
       data_volume: { get_resource: data_volume }
       os_auth_url: { get_param: os_auth_url }
       wc_notify: {get_attr: [back_wait_handle, curl_cli]}
-      install_url_docker: { get_param: install_url_docker }
-      install_url_ci_tool_stack: { get_param: install_url_ci_tool_stack }
 
 outputs:
   ip:

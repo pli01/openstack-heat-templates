@@ -240,9 +240,6 @@ resources:
       user_data_format: RAW # with cloud-init only
 #      user_data_format: SOFTWARE_CONFIG
       user_data: { get_attr: [ node_userdata, userdata ] }
-      metadata:
-        install_url_docker: { get_param: install_url_docker }
-        install_url_ci_tool_stack: { get_param: install_url_ci_tool_stack }
 
   node_userdata:
     type: Lib::Stack::UserData::Node
@@ -274,8 +271,6 @@ resources:
       front_ip_public: { get_param: front_ip_public }
       data_volume: { get_resource: data_volume }
       wc_notify: {get_attr: [front_wait_handle, curl_cli]}
-      install_url_docker: { get_param: install_url_docker }
-      install_url_ci_tool_stack: { get_param: install_url_ci_tool_stack }
 
 outputs:
   ip:
