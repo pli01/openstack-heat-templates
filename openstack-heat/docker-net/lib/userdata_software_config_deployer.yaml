@@ -214,8 +214,8 @@ resources:
             $REPOSITORY_URL: { get_param: repository_srv }
             $REPOSITORY_USERNAME: { get_param: repository_username }
             $REPOSITORY_PASSWORD: { get_param: repository_password }
-            $INSTALL_URL_DOCKER: { get_param: install_url_docker }
-            $INSTALL_URL_CI_TOOL_STACK: { get_param: install_url_ci_tool_stack }
+            $install_url_docker: { get_param: install_url_docker }
+            $install_url_ci_tool_stack: { get_param: install_url_ci_tool_stack }
   
   write_nodnsupdate:
     type: "OS::Heat::SoftwareConfig"
