@@ -1,0 +1,15 @@
+parameters:
+  key_name: user-key
+  flavor: standard-1.1
+  vol_size: 5
+  vol_type: default
+  image: debian9
+  floatingip_id: "84884a19-3ec3-4946-a022-9bb8b9af1570"
+  private_network: "959dc7d0-ceac-44fc-b590-ff62d11508cd"
+  port_number: "80"
+# Blue
+  servers: [ '192.168.1.1']
+# Green
+#  servers: [ '192.168.1.2' ]
+# LB
+#  servers: [ '192.168.1.1', '192.168.1.2' ]
