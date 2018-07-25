@@ -1,0 +1,3 @@
+parameters:
+  vol_size: 10
+  vol_type: default
