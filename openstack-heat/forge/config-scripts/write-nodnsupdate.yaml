@@ -1,0 +1,12 @@
+#cloud-config
+merge_how: dict(recurse_array)+list(append)
+write_files:
+  - path: /etc/dhcp/dhclient-enter-hooks.d/nodnsupdate
+    owner: root:root
+    permissions: '0750'
+    content: |
+      #!/bin/sh
+      # Disable resolv.conf generation with dhclient
+        make_resolv_conf(){
+          :
+        }

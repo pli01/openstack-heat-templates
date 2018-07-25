@@ -1,0 +1,51 @@
+parameters:
+  stack: docker
+  context: test
+  key_name: user-key
+  availability_zone: AZ1
+  vol_size: 10
+  data_size: 10
+  vol_type: default
+  bastion_flavor: small
+  bastion_image: debian9-latest
+  bastion_node_count: 1
+  front_flavor: small
+  front_image: debian9-latest
+  front_node_count: 1
+  back_flavor: small
+  back_image: debian9-latest
+  back_node_count: 4
+  front_bastion_subnet_prefix: "172.16.4.1"
+  front_subnet_prefix: "172.16.5.2"
+  back_subnet_prefix: "172.16.6.2"
+  front_subnet_cidr: "172.16.4.0/22"
+  front_subnet_start: "172.16.7.250"
+  front_subnet_end: "172.16.7.252"
+  front_gateway_ip: "172.16.7.254"
+
+  floatingip_id_bastion: 3cb07d88-e955-444d-a02e-1822d043bf4f
+  floatingip_id_front: 2eab90de-8973-4309-bc03-6ef1bfac2e73
+  floatingip_network_name: default-ext-net
+  front_ip_public: 192.168.0.1
+
+  vrrp_shared_ip:
+    - ip_address: "172.16.7.1"
+
+  dns_domainname: [ 'mydomain.com' ]
+  dns_nameservers: [ '192.168.1.1', '192.168.2.2' ]
+  http_proxy: ""
+  no_proxy: ""
+  deploy_account: deploy-user
+  deploy_account_ssh: ""
+  backup_account: backup-user
+  env_file_system: /DATA
+
+  repository_srv: 192.168.1.1
+  repository_username: builder
+  repository_password: password
+  registry_url: 192.168.1.1
+  registry_username: builder
+  registry_password: password
+
+  install_url_docker: https://github.com/pli01/ansible-docker-host/archive/master.tar.gz
+  install_url_ci_tool_stack: https://github.com/pli01/ansible-role-service-ci-tool-stack/archive/master.tar.gz

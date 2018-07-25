@@ -1,0 +1,277 @@
+heat_template_version: 2015-10-15
+
+description: >
+  Front Instance with UserData and allowed pair ip and FloatingIP
+
+parameters:
+  instance_basename:
+    type: string
+  key_name:
+    type: string
+    description: Name of keypair to assign to servers
+  security_group:
+    type: comma_delimited_list
+  network:
+    type: string
+  subnet:
+    type: string
+  image:
+    type: string
+  flavor:
+    type: string
+  floatingip_id:
+    type: string
+  prefix:
+    type: string
+  index:
+    type: number
+  vol_size:
+    type: number
+    description: The size of the Cinder root volume for instance
+  data_size:
+    type: number
+    description: The size of the Cinder data volume for instance
+  vol_type:
+    type: string
+    description: The volume type of the Cinder volume for instance
+  vrrp_shared_ip:
+    type: json
+    description: vrrp_shared_ip
+
+  http_proxy:
+    type: string
+    description: http_proxy
+    default: ""
+  no_proxy:
+    type: string
+    description: no_proxy
+    default: ""
+  deploy_account:
+    type: string
+    description: service_account
+    default: ""
+  deploy_account_ssh:
+    type: string
+    description: service_account_ssh
+    default: ""
+  deploy_private_key:
+    type: string
+    description: deploy_private_key
+    default: ""
+  deploy_public_key:
+    type: string
+    description: deploy_public_key
+    default: ""
+  dns_nameservers:
+    type: comma_delimited_list
+    label: DNS nameservers
+    description: 8.8.8.8,8.8.4.4
+  dns_domainname:
+    type: comma_delimited_list
+    label: DNS dns_domainname
+    description: domain.fr,domain.net
+  stack:
+    type: string
+    default: ""
+  context:
+    type: string
+    default: ""
+  front_bastion_subnet_prefix:
+    type: string
+    description: define ip format for bastion x.x.x.x{index}
+    default: ""
+  front_subnet_prefix:
+    type: string
+    description: define ip format for node x.x.x.x{index}
+    default: ""
+  front_node_count:
+    type: number
+    description: define the count of instance
+    default: 1
+  bastion_node_count:
+    type: number
+    description: define the count of instance
+    default: 1
+  back_subnet_prefix:
+    type: string
+    description: define ip format for node x.x.x.x{index}
+    default: ""
+  back_node_count:
+    type: number
+    description: define the count of instance
+    default: 0
+  backup_account:
+    type: string
+    description: backup_account
+    default: "backup"
+  env_file_system:
+    type: string
+    description: file system mounted
+    default: "/DATA"
+  repository_srv:
+    type: string
+    description: repository_srv
+    default: ""
+  repository_username:
+    type: string
+    description: repository_username
+    default: ""
+  repository_password:
+    type: string
+    description: repository_password
+    default: ""
+  registry_url:
+    type: string
+    description: registry_url
+    default: "localhost"
+  registry_username:
+    type: string
+    description: registry_username
+    default: "user"
+  registry_password:
+    type: string
+    description: registry_password
+    default: "password"
+
+  front_ip_public:
+    type: string
+    description: front_ip_public
+    default: "password"
+
+  wait_condition_timeout:
+    type: number
+    default: 6000
+    description : >
+      timeout for the Wait Conditions
+
+  availability_zone:
+    type: string
+    description: The Availability Zone to launch the instance.
+  affinity_group:
+    type: string
+
+  install_url_docker:
+    type: string
+    default: ""
+  install_url_ci_tool_stack:
+    type: string
+    default: ""
+
+resources:
+  front_wait_handle:
+    type: OS::Heat::WaitConditionHandle
+
+  front_wait_condition:
+    type: OS::Heat::WaitCondition
+    depends_on: instance
+    properties:
+      handle: {get_resource: front_wait_handle}
+      timeout: {get_param: wait_condition_timeout}
+
+  random:
+    type: OS::Heat::RandomString
+    properties:
+      length: 10
+      sequence: lettersdigits
+
+  port:
+    depends_on: [ random ]
+    type: OS::Neutron::Port
+    properties:
+      name:
+        str_replace:
+          template: bn%-rand%
+          params:
+            "bn%": { get_param: instance_basename }
+            "rand%": { get_attr: [random, value] }
+      network_id: { get_param: network }
+      security_groups: { get_param: security_group }
+      allowed_address_pairs: { get_param: vrrp_shared_ip }
+      fixed_ips:
+        - subnet_id: { get_param: subnet }
+          ip_address:
+            str_replace:
+              template: prefix%index%
+              params:
+                "prefix%": { get_param: prefix }
+                "index%":  { get_param: index }
+
+  floating:
+    type: OS::Neutron::FloatingIPAssociation
+    depends_on: [ port ]
+    properties:
+      floatingip_id: { get_param: floatingip_id }
+      port_id: { get_resource: port }
+
+  root_volume:
+    type: OS::Cinder::Volume
+    properties:
+      image: { get_param: image }
+      size: { get_param: vol_size }
+      volume_type: { get_param: vol_type }
+
+  data_volume:
+    type: OS::Cinder::Volume
+    properties:
+      size: { get_param: data_size }
+      volume_type: { get_param: vol_type }
+
+  data_volume_attachment:
+    type: OS::Cinder::VolumeAttachment
+    depends_on: [ data_volume ]
+    properties:
+      volume_id: { get_resource: data_volume }
+      instance_uuid: { get_resource: instance }
+
+  instance:
+    depends_on: [ port, root_volume, node_userdata ]
+    type: OS::Nova::Server
+    properties:
+      availability_zone: { get_param: availability_zone }
+      scheduler_hints:
+        group: { get_param: affinity_group }
+      name: { get_param: instance_basename }
+      key_name: { get_param: key_name }
+      block_device_mapping_v2: [{ device_name: "vda", volume_id : { get_resource : root_volume }, delete_on_termination : true }]
+#      image: { get_param: image }
+      flavor: { get_param: flavor }
+      networks:
+        - port: { get_resource: port }
+      user_data_format: RAW # with cloud-init only
+#      user_data_format: SOFTWARE_CONFIG
+      user_data: { get_attr: [ node_userdata, userdata ] }
+
+  node_userdata:
+    type: Lib::Stack::UserData::Node
+    properties:
+      http_proxy: { get_param: http_proxy }
+      no_proxy: { get_param: no_proxy }
+      deploy_account: { get_param: deploy_account }
+      deploy_account_ssh: { get_param: deploy_account_ssh }
+      deploy_private_key: { get_param: deploy_private_key }
+      deploy_public_key: { get_param: deploy_public_key }
+      dns_nameservers: { get_param: dns_nameservers }
+      dns_domainname: { get_param: dns_domainname }
+      context: { get_param: context }
+      stack: { get_param: stack }
+      front_bastion_subnet_prefix: { get_param: front_bastion_subnet_prefix }
+      front_subnet_prefix: { get_param: front_subnet_prefix }
+      front_node_count: { get_param: front_node_count }
+      back_subnet_prefix: { get_param: back_subnet_prefix }
+      back_node_count: { get_param: back_node_count }
+      bastion_node_count: { get_param: bastion_node_count }
+      backup_account: { get_param: backup_account }
+      env_file_system: { get_param: env_file_system }
+      repository_srv: { get_param: repository_srv }
+      repository_username: { get_param: repository_username }
+      repository_password: { get_param: repository_password }
+      registry_url: { get_param: registry_url }
+      registry_username: { get_param: registry_username }
+      registry_password: { get_param: registry_password }
+      front_ip_public: { get_param: front_ip_public }
+      data_volume: { get_resource: data_volume }
+      wc_notify: {get_attr: [front_wait_handle, curl_cli]}
+
+outputs:
+  ip:
+    value: { get_attr: [ port, fixed_ips ] }

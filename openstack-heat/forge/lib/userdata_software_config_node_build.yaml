@@ -1,0 +1,299 @@
+heat_template_version: 2015-10-15
+
+description: >
+  userdata : userdata node
+
+parameters:
+  http_proxy:
+    type: string
+    description: http_proxy
+    default: ""
+  no_proxy:
+    type: string
+    description: no_proxy
+    default: ""
+  deploy_account:
+    type: string
+    description: service_account
+    default: ""
+  deploy_account_ssh:
+    type: string
+    description: service_account_ssh
+    default: ""
+  deploy_private_key:
+    type: string
+    description: deploy_private_key
+    default: ""
+  deploy_public_key:
+    type: string
+    description: deploy_public_key
+    default: ""
+  dns_nameservers:
+    type: comma_delimited_list
+    label: DNS nameservers
+    description: 8.8.8.8,8.8.4.4
+  dns_domainname:
+    type: comma_delimited_list
+    label: DNS dns_domainname
+    description: domain.fr,domain.net
+  stack:
+    type: string
+    default: ""
+  context:
+    type: string
+    default: ""
+  front_bastion_subnet_prefix:
+    type: string
+    description: define ip format for bastion x.x.x.x{index}
+    default: ""
+  front_subnet_prefix:
+    type: string
+    description: define ip format for node x.x.x.x{index}
+    default: ""
+  front_node_count:
+    type: number
+    description: define the count of instance
+    default: 1
+  bastion_node_count:
+    type: number
+    description: define the count of instance
+    default: 1
+  back_subnet_prefix:
+    type: string
+    description: define ip format for node x.x.x.x{index}
+    default: ""
+  back_node_count:
+    type: number
+    description: define the count of instance
+    default: 0
+  backup_account:
+    type: string
+    description: backup_account
+    default: "backup"
+  env_file_system:
+    type: string
+    description: file system mounted
+    default: "/DATA"
+  repository_srv:
+    type: string
+    description: repository_srv
+    default: ""
+  repository_username:
+    type: string
+    description: repository_username
+    default: ""
+  repository_password:
+    type: string
+    description: repository_password
+    default: ""
+  registry_url:
+    type: string
+    description: registry_url
+    default: "localhost"
+  registry_username:
+    type: string
+    description: registry_username
+    default: "user"
+  registry_password:
+    type: string
+    description: registry_password
+    default: "password"
+
+  front_ip_public:
+    type: string
+    description: front_ip_public
+    default: "password"
+  wc_notify:
+    type: string
+    description: wc_notify
+    default: ""
+
+resources:
+  userdata:
+    type: "OS::Heat::MultipartMime"
+    properties:
+      parts:
+        - config: { get_resource: cloud_config_init }
+        - config: { get_resource: cloud_config_reboot }
+        - config: { get_resource: config_base_user }
+        - config: { get_resource: config_base_generate }
+        - config: { get_resource: write_nodnsupdate }
+        - config: { get_resource: resolv_conf }
+        - config: { get_resource: install_config_base }
+#        - config: { get_resource: genere_ssh_config_custom }
+        - config: { get_resource: add_etc_hosts }
+        - config: { get_resource: install_config_custom }
+        - config: { get_resource: install_docker_node }
+#        - config: { get_resource: install_ci_tool_stack }
+        - config: { get_resource: clean_install }
+        - config: { get_resource: instance_wc_notify }
+
+  cloud_config_init:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config: { get_file: ../config-scripts/cloud-config-init.yaml }
+
+  cloud_config_reboot:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config: { get_file: ../config-scripts/cloud-config-reboot.yaml }
+
+  config_base_user:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: ../config-scripts/config-base-user.yaml }
+          params:
+            $deploy_account: { get_param: deploy_account }
+            $deploy_account_ssh: { get_param: deploy_account_ssh }
+            $deploy_public_key: { get_param: deploy_public_key }
+            $backup_account: { get_param: backup_account }
+
+  config_base_generate:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: ../config-scripts/config-base-generate.yaml }
+          params:
+            $destfile: /root/install_config_base.cfg
+            $http_proxy: { get_param: http_proxy }
+            $no_proxy: { get_param: no_proxy }
+            $nameservers: { list_join: [' ', { get_param: dns_nameservers }] }
+            $domainname: { list_join: [' ', { get_param: dns_domainname }] }
+            $deploy_account: { get_param: deploy_account }
+            $context: { get_param: context }
+            $stack: { get_param: stack }
+            $front_bastion_subnet_prefix: { get_param: front_bastion_subnet_prefix }
+            $front_subnet_prefix: { get_param: front_subnet_prefix }
+            $front_node_count: { get_param: front_node_count }
+            $bastion_node_count: { get_param: bastion_node_count }
+            $back_node_count: { get_param: back_node_count }
+            $back_subnet_prefix: { get_param: back_subnet_prefix }
+            $backup_account: { get_param: backup_account }
+            $env_file_system: { get_param: env_file_system }
+            $deploy_public_key: { get_param: deploy_public_key }
+            $FRONT_IP_PUBLIC: { get_param: front_ip_public }
+            $REGISTRY_URL: { get_param: registry_url }
+            $REGISTRY_USERNAME: { get_param: registry_username }
+            $REGISTRY_PASSWORD: { get_param: registry_password }
+            $REPOSITORY_URL: { get_param: repository_srv }
+            $REPOSITORY_USERNAME: { get_param: repository_username }
+            $REPOSITORY_PASSWORD: { get_param: repository_password }
+  
+  write_nodnsupdate:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config: { get_file: ../config-scripts/write-nodnsupdate.yaml }
+
+  resolv_conf:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: ../config-scripts/resolv_conf.sh }
+          params:
+            $config_file: /root/install_config_base.cfg
+
+  install_config_base:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: ../config-scripts/install_config_base.sh }
+          params:
+            $config_file: /root/install_config_base.cfg
+
+  genere_ssh_config_custom:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: ../config-scripts/genere_ssh_config_custom.sh }
+          params:
+            $config_file: /root/install_config_base.cfg
+            $deploy_private_key: { get_param: deploy_private_key }
+            $deploy_public_key: { get_param: deploy_public_key }
+
+  add_etc_hosts:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: ../config-scripts/add_etc_hosts.sh }
+          params:
+            $config_file: /root/install_config_base.cfg
+
+  install_config_custom:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: ../config-scripts/install_config_custom.sh }
+          params:
+            $config_file: /root/install_config_base.cfg
+
+  install_docker_node:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: ../config-scripts/install_docker_node.sh }
+          params:
+            $config_file: /root/install_config_base.cfg
+            $ansible_install_dir: /root
+            $install_url: { get_file: ../config/install_url.yml }
+
+  install_ci_tool_stack:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: {get_file: ../config-scripts/install_ci_tool_stack.sh}
+          params:
+            $config_file: /root/install_config_base.cfg
+            $ansible_install_dir: /root
+            $install_url: { get_file: ../config/ci-tool-stack/install_url.yml }
+
+  clean_install:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: ../config-scripts/clean_install.sh }
+          params:
+            $config_file: /root/install_config_base.cfg
+
+  instance_wc_notify:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: |
+            #!/bin/bash -v
+            export http_proxy=$http_proxy
+            export https_proxy=$http_proxy
+            export no_proxy=$no_proxy
+            $wc_notify --data-binary '{"status": "SUCCESS"}'
+          params:
+            $wc_notify: {get_param: wc_notify}
+            $no_proxy: { get_param: no_proxy }
+            $http_proxy: { get_param: http_proxy }
+outputs:
+  userdata:
+    value: { get_resource: userdata }

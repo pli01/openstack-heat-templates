@@ -1,0 +1,34 @@
+#cloud-config
+merge_how: dict(recurse_array)+list(append)
+write_files:
+  - path: $destfile
+    owner: $owner
+    permissions: '0600'
+    content: |
+      # $destfile config generate from heat
+      export http_proxy="$http_proxy"
+      export https_proxy="$http_proxy"
+      export no_proxy="$no_proxy"
+      export nameservers="$nameservers"
+      export domainname="$domainname"
+      export deploy_account="$deploy_account"
+      export deploy_public_key="$deploy_public_key"
+      export context="$context"
+      export stack="$stack"
+      export front_bastion_subnet_prefix="$front_bastion_subnet_prefix"
+      export front_subnet_prefix="$front_subnet_prefix"
+      export front_node_count="$front_node_count"
+      export bastion_node_count="$bastion_node_count"
+      export back_subnet_prefix="$back_subnet_prefix"
+      export back_node_count="$back_node_count"
+      export backup_account="$backup_account"
+      export env_file_system="$env_file_system"
+      export FRONT_IP_PUBLIC="$FRONT_IP_PUBLIC"
+      export REGISTRY_URL="$REGISTRY_URL"
+      export REGISTRY_USERNAME="$REGISTRY_USERNAME"
+      export REGISTRY_PASSWORD="$REGISTRY_PASSWORD"
+      export REPOSITORY_URL="$REPOSITORY_URL"
+      export REPOSITORY_USERNAME="$REPOSITORY_USERNAME"
+      export REPOSITORY_PASSWORD="$REPOSITORY_PASSWORD"
+      export INSTALL_URL_DOCKER="$install_url_docker"
+      export INSTALL_URL_CI_TOOL_STACK="$install_url_ci_tool_stack"

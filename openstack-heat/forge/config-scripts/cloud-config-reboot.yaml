@@ -1,0 +1,8 @@
+#cloud-config
+merge_how: dict(recurse_array)+list(append)
+power_state:
+  mode: reboot
+  message: "FINISH: INSTANCE REBOOTING"
+  condition: True
+#  delay: "+1"
+#  timeout: 30
