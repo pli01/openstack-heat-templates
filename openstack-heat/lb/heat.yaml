@@ -3,6 +3,12 @@ heat_template_version: 2015-10-15
 description: Template that installs a HAProxy server.
 
 parameters:
+  stack:
+    type: string
+    default: ""
+  context:
+    type: string
+    default: ""
   image:
     type: string
     label: Image name or ID
@@ -100,6 +106,13 @@ resources:
     type: OS::Nova::Server
     depends_on: [ port, root_volume ]
     properties:
+      name:
+        str_replace:
+          template: stack%-ctx%-ress%
+          params:
+            "stack%": { get_param: stack }
+            "ctx%": {get_param: context}
+            "ress%": "lb"
 # Boot on ephemeral disk
 #      image: { get_param: image }
 # Boot on volume
