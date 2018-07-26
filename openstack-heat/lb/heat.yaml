@@ -32,14 +32,19 @@ parameters:
     label: Key name
     description: Name of key-pair to be installed on the compute instance.
     default: my_key
+
+  dns_nameservers:
+    type: comma_delimited_list
+    label: DNS nameservers
+    description: dns_nameservers=8.8.8.8,8.8.4.4
+  floatingip_network_name:
+    type: string
   floatingip_id:
     type: string
-
-  private_network:
+  lb_subnet_cidr:
     type: string
-    label: Private network name or ID
-    description: Network to attach server to.
-    default: private
+    default: "192.168.1.0/24"
+# LB configuration backend
   servers:
     type: comma_delimited_list
     label: Servers
@@ -51,6 +56,58 @@ parameters:
     default: 80
 
 resources:
+  random:
+    type: OS::Heat::RandomString
+    properties:
+      length: 6
+      sequence: lettersdigits
+
+  extrouter:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: { get_param: floatingip_network_name }
+
+  lb_network:
+    depends_on: [ random ]
+    type: OS::Neutron::Net
+    properties:
+      admin_state_up: True
+      name:
+        str_replace:
+          template: stack%-ctx%-ress%-rand%
+          params:
+            "stack%": { get_param: 'stack' }
+            "ctx%": {get_param: context}
+            "ress%": "lb-net"
+            "rand%": { get_attr: [random, value] }
+      shared: False
+
+  lb_subnet:
+    type: OS::Neutron::Subnet
+    depends_on: [ lb_network ]
+    properties:
+      name:
+        str_replace:
+          template: stack%-ctx%-ress%-rand%
+          params:
+            "stack%": { get_param: stack }
+            "ctx%": { get_param: context}
+            "ress%": "lb-subnet"
+            "rand%": { get_attr: [random, value] }
+      cidr: {get_param: lb_subnet_cidr}
+      network_id: {get_resource: lb_network}
+      dns_nameservers: {get_param: dns_nameservers}
+      enable_dhcp: True
+      ip_version: 4
+
+  lb_interface:
+    type: OS::Neutron::RouterInterface
+    depends_on: [ lb_subnet, extrouter ]
+    properties:
+      router_id: { get_resource: extrouter }
+      subnet_id: { get_resource: lb_subnet }
+
   wait_condition:
     type: OS::Heat::WaitCondition
     properties:
@@ -83,7 +140,15 @@ resources:
   port:
     type: OS::Neutron::Port
     properties:
-      network: { get_param: private_network }
+      name:
+        str_replace:
+          template: stack%-ctx%-ress%-%index%
+          params:
+            "stack%": { get_param: stack }
+            "ctx%": {get_param: context}
+            "ress%": "lb"
+            "rand%": { get_attr: [random, value] }
+      network: { get_resource: lb_network }
       security_groups:
         - { get_resource: security_group }
         - { get_resource: security_group_ssh }
@@ -104,7 +169,7 @@ resources:
 
   haproxy_instance:
     type: OS::Nova::Server
-    depends_on: [ port, root_volume ]
+    depends_on: [ extrouter, lb_network, lb_interface, lb_subnet, port, root_volume ]
     properties:
       name:
         str_replace:
@@ -198,6 +263,8 @@ resources:
             crontab <_crontab
             rm _crontab
 
+            update-rc.d postfix disable
+            service postfix stop
             # let Heat know that we are done here
             wc_notify -k --data-binary '{"status": "SUCCESS"}'
 
