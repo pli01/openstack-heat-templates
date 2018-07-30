@@ -54,6 +54,10 @@ parameters:
     label: Port number
     description: Port number to proxy.
     default: 80
+  color:
+    type: string
+    label: stack color (blue/gren)
+    default: blue
 
 resources:
   random:
@@ -153,6 +157,7 @@ resources:
         - { get_resource: security_group }
         - { get_resource: security_group_ssh }
       replacement_policy: AUTO
+
   floating:
     type: OS::Neutron::FloatingIPAssociation
     depends_on: [ port ]
@@ -188,6 +193,7 @@ resources:
         - port: { get_resource: port }
       metadata:
         servers: { get_param: servers }
+        color: { get_param: color }
       user_data_format: RAW
       user_data:
         str_replace:
@@ -259,9 +265,13 @@ resources:
 
             # add a cron job to monitor the metadata and update haproxy
             crontab -l >_crontab || true
+            echo "PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin" >_crontab
             echo "* * * * * curl -s http://169.254.169.254/openstack/latest/meta_data.json | python /etc/haproxy/update.py | /usr/bin/logger -t haproxy_update" >>_crontab
             crontab <_crontab
             rm _crontab
+            service haproxy stop
+            service haproxy start
+            curl -s http://169.254.169.254/openstack/latest/meta_data.json | python /etc/haproxy/update.py | /usr/bin/logger -t haproxy_update
 
             update-rc.d postfix disable
             service postfix stop
