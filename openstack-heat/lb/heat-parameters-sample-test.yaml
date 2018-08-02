@@ -14,8 +14,10 @@ parameters:
 
   port_number: "80"
 # Blue
+  color: "blue"
   servers: [ '192.168.1.1']
 # Green
+#  color: "green"
 #  servers: [ '192.168.1.2' ]
-# LB
+# LB RR
 #  servers: [ '192.168.1.1', '192.168.1.2' ]

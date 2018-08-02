@@ -77,6 +77,7 @@ unset front_floating_ip_id
   if ! stack_is_present $stack_fip; then
    if create_if_not_exist ;then 
      echo "# Create $stack floating-ip stack"
+     stack_validate $stack_fip $STACK_DIR/$stack_fip_template $STACK_DIR/$stack_fip_param $plateforme $zone
      stack_create $stack_fip $STACK_DIR/$stack_fip_template $STACK_DIR/$stack_fip_param $plateforme $zone
    else
      log_error "1" "ERROR: $stack_fip introuvable"
@@ -89,6 +90,11 @@ unset front_floating_ip_id
   eval $(get_fip_id ${stack_fip})
   echo "  bastion_floating_ip_id: $bastion_floating_ip_id"
   echo "  front_floating_ip_id: $front_floating_ip_id"
+  echo "# Get ${stack_fip} bastion_floating_ip_address , front_floating_ip_address"
+  eval $(get_fip_ip_address ${stack_fip})
+  echo "  bastion_floating_ip_address: $bastion_floating_ip_address"
+  echo "  front_floating_ip_address": $front_floating_ip_address""
+
 done
 
 #
@@ -102,6 +108,7 @@ unset data_volume_id
   if ! stack_is_present $stack_volume; then
    if create_if_not_exist ;then 
      echo "# Create $stack volume stack"
+     stack_validate $stack_volume $STACK_DIR/$stack_volume_template $STACK_DIR/$stack_volume_param $plateforme $zone
      stack_create $stack_volume $STACK_DIR/$stack_volume_template $STACK_DIR/$stack_volume_param $plateforme $zone
    else
      log_error 1 "ERROR: Stack VOLUME ${stack_volume} absente"
@@ -129,14 +136,17 @@ fi
 echo "# Next color: ${next_stack_color}"
 
 eval $(get_param_stack_color ${next_stack_color})
+#set -x
 # create $next_stack_color
 if ! stack_is_present $stack_infra ; then
 #  stack_recreate $stack_infra
   echo "# Create $stack_infra"
+  stack_validate $stack_infra $STACK_DIR/$stack_infra_template $STACK_DIR/$stack_infra_param $plateforme $zone
   stack_create $stack_infra $STACK_DIR/$stack_infra_template $STACK_DIR/$stack_infra_param $plateforme $zone
 else
   if [ ! -z "$STACK_DELETE" ] ; then
     echo "# Recreate $stack_infra"
+    stack_validate $stack_infra $STACK_DIR/$stack_infra_template $STACK_DIR/$stack_infra_param $plateforme $zone
     stack_delete $stack_infra
     stack_create $stack_infra $STACK_DIR/$stack_infra_template $STACK_DIR/$stack_infra_param $plateforme $zone
   else
@@ -153,4 +163,5 @@ else
   stack_update_lb $next_stack_color
 fi
 
+get_lb_last_state $STACK_LB_NAME
 echo "# LB is $next_stack_color"
