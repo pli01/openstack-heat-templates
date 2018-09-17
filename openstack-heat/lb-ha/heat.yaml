@@ -1,0 +1,387 @@
+heat_template_version: "2015-10-15"
+
+description: Template that installs a HAProxy server.
+
+parameters:
+  image:
+    type: string
+    label: Image name or ID
+    description: Image to be used for server. Please use an Ubuntu based image.
+    default: trusty-server-cloudimg-amd64
+  flavor:
+    type: string
+    label: Flavor
+    description: Type of instance (flavor) to be used on the compute instance.
+    default: m1.small
+  vol_size:
+    type: number
+    description: The size of the Cinder root volume for instance
+    default: 10
+  vol_type:
+    type: string
+    description: The volume type of the Cinder volume for instance
+    default: default
+  key_name:
+    type: string
+    label: Key name
+    description: Name of key-pair to be installed on the compute instance.
+    default: my_key
+
+  dns_nameservers:
+    type: comma_delimited_list
+    label: DNS nameservers
+    description: dns_nameservers=8.8.8.8,8.8.4.4
+  floatingip_network_name:
+    type: string
+  floatingip_id:
+    type: string
+  lb_subnet_cidr:
+    type: string
+    default: "192.168.1.0/24"
+  ssh_access_cidr:
+    type: string
+    label: IP range that is permitted to SSH to bastion instance
+    description: The CIDR IP range that is permitted to SSH to bastion instance. Note - a value of 0.0.0.0/0 will allow access from ANY IP address.
+    default: "192.168.2.2/32"
+    constraints:
+      - {custom_constraint: net_cidr}
+
+  ssh_authorized_keys:
+    type: comma_delimited_list
+    label: ssh_authorized_keys
+    description: Comma separated list of keypair.
+    default: []
+
+  syslog_relay:
+    type: string
+    label: syslog relay
+    description: syslog relay ip
+    default: ""
+
+# LB configuration backend
+  servers:
+    type: comma_delimited_list
+    label: Servers
+    description: Comma separated list of servers in the cluster.
+  port_number:
+    type: number
+    label: Port number
+    description: Port number to proxy.
+    default: 80
+  color:
+    type: string
+    label: stack color (blue/gren)
+    default: blue
+
+  keepalived_password:
+    type: string
+    description: Password for keepalived encryption
+    default: SUperS3creT
+
+
+resources:
+  extrouter:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: { get_param: floatingip_network_name }
+
+  lb_network:
+    type: OS::Neutron::Net
+    properties:
+      admin_state_up: True
+      shared: False
+
+  lb_subnet:
+    type: OS::Neutron::Subnet
+    depends_on: [ lb_network ]
+    properties:
+      cidr: {get_param: lb_subnet_cidr}
+      network_id: {get_resource: lb_network}
+      dns_nameservers: {get_param: dns_nameservers}
+      enable_dhcp: True
+      ip_version: 4
+
+  lb_interface:
+    type: OS::Neutron::RouterInterface
+    depends_on: [ lb_subnet, extrouter ]
+    properties:
+      router_id: { get_resource: extrouter }
+      subnet_id: { get_resource: lb_subnet }
+
+  wait_condition:
+    type: OS::Heat::WaitCondition
+    properties:
+      handle: { get_resource: wait_handle }
+      count: 1
+      timeout: 600
+
+  wait_handle:
+    type: OS::Heat::WaitConditionHandle
+
+
+  haproxy_secgroup:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+        - direction: ingress
+          protocol: 112
+          remote_group_id:
+          remote_mode: remote_group_id
+        - direction: ingress
+          protocol: icmp
+          remote_ip_prefix: 0.0.0.0/0
+        - direction: ingress
+          protocol: tcp
+          remote_ip_prefix: 0.0.0.0/0
+          port_range_min: 80
+          port_range_max: 80
+
+  security_group:
+      type: OS::Neutron::SecurityGroup
+      properties:
+        name: web_server_security_group
+        rules:
+          - protocol: tcp
+            port_range_min: { get_param: port_number }
+            port_range_max: { get_param: port_number }
+  security_group_ssh:
+      type: OS::Neutron::SecurityGroup
+      properties:
+        name: ssh_server_security_group
+        rules:
+          - protocol: tcp
+            remote_ip_prefix: { get_param: ssh_access_cidr }
+            port_range_min: 22
+            port_range_max: 22
+            direction: ingress
+
+  haproxy_vip_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_resource: lb_network }
+      fixed_ips:
+        - subnet_id: { get_resource: lb_subnet }
+      security_groups:
+        - { get_resource: haproxy_secgroup }
+        - { get_resource: security_group }
+      replacement_policy: AUTO
+
+  port1:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_resource: lb_network }
+      security_groups:
+        - { get_resource: haproxy_secgroup }
+        - { get_resource: security_group }
+        - { get_resource: security_group_ssh }
+      fixed_ips:
+        - subnet_id: { get_resource: lb_subnet }
+      allowed_address_pairs:
+        - ip_address: { get_attr: [haproxy_vip_port, fixed_ips, 0, ip_address] }
+      replacement_policy: AUTO
+
+  port2:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_resource: lb_network }
+      security_groups:
+        - { get_resource: haproxy_secgroup }
+        - { get_resource: security_group }
+        - { get_resource: security_group_ssh }
+      fixed_ips:
+        - subnet_id: { get_resource: lb_subnet }
+      allowed_address_pairs:
+        - ip_address: { get_attr: [haproxy_vip_port, fixed_ips, 0, ip_address] }
+      replacement_policy: AUTO
+
+  floating:
+    type: OS::Neutron::FloatingIPAssociation
+    depends_on: [ haproxy_vip_port ]
+    properties:
+      floatingip_id: { get_param: floatingip_id }
+      port_id: { get_resource: haproxy_vip_port }
+
+  haproxy_ip_1:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: { get_param: floatingip_network_name }
+      port_id: { get_resource: port1 }
+    depends_on: port1
+
+  haproxy_ip_2:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: { get_param: floatingip_network_name }
+      port_id: { get_resource: port2 }
+    depends_on: port2
+
+  root_volume_1:
+    type: OS::Cinder::Volume
+    properties:
+      image: { get_param: image }
+      size: { get_param: vol_size }
+      volume_type: { get_param: vol_type }
+
+  root_volume_2:
+    type: OS::Cinder::Volume
+    properties:
+      image: { get_param: image }
+      size: { get_param: vol_size }
+      volume_type: { get_param: vol_type }
+
+  haproxy_cluster:
+    type: OS::Nova::ServerGroup
+    properties:
+      name: Haproxy Cluster
+      policies: ['anti-affinity']
+
+
+  haproxy_instance_1:
+    type: OS::Nova::Server
+    depends_on: [ extrouter, lb_network, lb_interface, lb_subnet, port1, root_volume_1 ]
+    properties:
+      scheduler_hints: { group: { get_resource: haproxy_cluster }}
+# Boot on ephemeral disk
+#      image: { get_param: image }
+# Boot on volume
+      block_device_mapping_v2: [{ device_name: "vda", volume_id : { get_resource : root_volume_1 }, delete_on_termination : true }]
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: port1 }
+      metadata:
+        servers: { get_param: servers }
+        color: { get_param: color }
+      user_data_format: RAW
+      user_data: { get_resource: postinstall_lb_1 }
+
+  haproxy_instance_2:
+    type: OS::Nova::Server
+    depends_on: [ extrouter, lb_network, lb_interface, lb_subnet, port2, root_volume_2 ]
+    properties:
+      scheduler_hints: { group: { get_resource: haproxy_cluster }}
+# Boot on ephemeral disk
+#      image: { get_param: image }
+# Boot on volume
+      block_device_mapping_v2: [{ device_name: "vda", volume_id : { get_resource : root_volume_2 }, delete_on_termination : true }]
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: port2 }
+      metadata:
+        servers: { get_param: servers }
+        color: { get_param: color }
+      user_data_format: RAW
+      user_data: { get_resource: postinstall_lb_2 }
+
+  postinstall_lb_1:
+    type: "OS::Heat::MultipartMime"
+    properties:
+      parts:
+        - config: { get_resource: included_files }
+        - config: { get_resource: start_postconf }
+        - config: { get_resource: lb_postconf_1 }
+#        - config: { get_resource: configure_logs }
+        - config: { get_resource: end_postconf }
+
+  postinstall_lb_2:
+    type: "OS::Heat::MultipartMime"
+    properties:
+      parts:
+        - config: { get_resource: included_files }
+        - config: { get_resource: start_postconf }
+        - config: { get_resource: lb_postconf_2 }
+#        - config: { get_resource: configure_logs }
+        - config: { get_resource: end_postconf }
+
+
+  included_files:
+    type: "OS::Heat::CloudConfig"
+    properties:
+      cloud_config:
+        merge_how: dict(recurse_array)+list(append)
+        write_files:
+        - path: /home/debian/common_functions.sh
+          permissions: 0700
+          content:
+            str_replace:
+              params:
+                $wc_notify: {get_attr: [wait_handle, curl_cli]}
+              template: { get_file: config-scripts/common_functions.sh }
+
+  start_postconf:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: config-scripts/start_postconf.sh }
+          params:
+            $ssh_authorized_keys: { get_param: ssh_authorized_keys }
+
+#  configure_logs:
+#    type: "OS::Heat::SoftwareConfig"
+#    properties:
+#      group: ungrouped
+#      config:
+#        str_replace:
+#          template: { get_file: config-scripts/configure_logs.sh }
+#          params:
+#            $syslog_relay: {get_param: syslog_relay}
+#
+
+  lb_postconf_1:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: config-scripts/lb_postconf.sh }
+          params:
+            $state: BACKUP
+            $priority: 50
+            $password: { get_param: keepalived_password }
+            $vip: { get_attr: [haproxy_vip_port, fixed_ips, 0, ip_address] }
+            __port__: { get_param: port_number }
+
+  lb_postconf_2:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: config-scripts/lb_postconf.sh }
+          params:
+            $state: MASTER
+            $priority: 100
+            $password: { get_param: keepalived_password }
+            $vip: { get_attr: [haproxy_vip_port, fixed_ips, 0, ip_address] }
+            __port__: { get_param: port_number }
+
+
+  end_postconf:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config: { get_file: config-scripts/end_postconf.sh }
+
+outputs:
+  name1:
+    description: Name of the HAProxy instance.
+    value: { get_attr: [haproxy_instance_1, name] }
+  ip1:
+    description: The IP address of the HAProxy instance.
+    value: { get_attr: [haproxy_instance_1, first_address] }
+  port1:
+    description: The network port of the HAProxy instance.
+    value: { get_resource: port1 }
+  name2:
+    description: Name of the HAProxy instance.
+    value: { get_attr: [haproxy_instance_2, name] }
+  ip2:
+    description: The IP address of the HAProxy instance.
+    value: { get_attr: [haproxy_instance_2, first_address] }
+  port2:
+    description: The network port of the HAProxy instance.
+    value: { get_resource: port2 }

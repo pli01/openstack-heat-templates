@@ -1,0 +1,26 @@
+parameter_defaults:
+  key_name: debian
+  flavor: z1.standard-pi-1.1
+  vol_size: 5
+  vol_type: default-z1
+  image: debian9-latest
+  lb_subnet_cidr: "172.31.0.0/24"
+  dns_nameservers: [ '192.168.1.10', '192.168.1.11' ]
+#  syslog_relay: 10.228.141.247
+  floatingip_network_name: ext-net-default
+  port_number: "80"
+
+  # authorized_keys to debian account
+  ssh_authorized_keys:
+    - ssh-rsa AAAAXXXXX imported-openssh-key
+# parametre en argument
+  ssh_access_cidr: 192.168.1.100/32
+  floatingip_id: ""
+# Blue
+  color: "blue"
+  servers: [ '192.168.10.142' ]
+# Green
+#  color: "green"
+#  servers: [ '192.168.10.151' ]
+# LB RR
+#  servers: [ '192.168.10.142', '192.168.10.151' ]
