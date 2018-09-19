@@ -1,0 +1,172 @@
+heat_template_version: 2015-10-15
+
+description: >
+   This HEAT template demonstrates the creation of an instances and uses the
+   OS::Heat::SoftwareConfig and OS::Heat::SoftwareDeployment resources to
+   deploy software using os-collect-config tools. The template takes a vanilla
+   OS deployment and automatically installs and configures os-collect-config
+   in preparation for connecting to the HEAT engine.
+
+parameters:
+  key_name:
+    type: string
+    description: SSH Key Pair
+    constraints:
+      - custom_constraint: nova.keypair
+  flavor:
+    type: string
+    description: Flavor to use for the migration server
+    default: t1.small
+    constraints:
+      - custom_constraint: nova.flavor
+  image:
+    type: string
+    description: Select vCloudTransfer for a CentOS instance with ovftool installed
+    default: "vCloudTransfer"
+    constraints:
+      - custom_constraint: glance.image
+  network:
+    type: string
+    description: Name of the network to create the VM on
+    default: Internal
+    constraints:
+      - custom_constraint: neutron.network
+  vol_size:
+    type: number
+    description: The size of the Cinder root volume for instance
+    default: 10
+  vol_type:
+    type: string
+    description: The volume type of the Cinder volume for instance
+    default: default
+  floatingip_network_name:
+    type: string
+    label: The Floating Network
+    description: floatingip_network_name=public
+  dns_nameservers:
+    type: comma_delimited_list
+    label: DNS nameservers
+    description: dns_nameservers=8.8.8.8,8.8.4.4
+  subnet_cidr:
+    type: string
+    default: "192.168.1.0/24"
+
+resources:
+#  extrouter:
+#    type: OS::Neutron::Router
+#    properties:
+#      external_gateway_info:
+#        network: { get_param: floatingip_network_name }
+#
+#  network:
+#    type: OS::Neutron::Net
+#
+#  subnet:
+#    type: OS::Neutron::Subnet
+#    depends_on: [ network ]
+#    properties:
+#      cidr: {get_param: subnet_cidr}
+#      network_id: {get_resource: network}
+#      dns_nameservers: {get_param: dns_nameservers}
+#      enable_dhcp: True
+#      ip_version: 4
+#
+#  interface:
+#    type: OS::Neutron::RouterInterface
+#    depends_on: [ subnet, extrouter ]
+#    properties:
+#      router_id: { get_resource: extrouter }
+#      subnet_id: { get_resource: subnet }
+#
+  ssh_ext_secgroup:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+        - protocol: tcp
+          remote_ip_prefix: 0.0.0.0/0
+          port_range_min: 22
+          port_range_max: 22
+        - protocol: icmp
+          remote_ip_prefix: 0.0.0.0/0
+
+  port:
+    type: OS::Neutron::Port
+#    depends_on: [ network ]
+    properties:
+#      network_id: { get_resource: network }
+      network_id: { get_param: network }
+      security_groups:
+        - { get_resource: ssh_ext_secgroup }
+
+  floating_ip:
+    type: OS::Neutron::FloatingIP
+    depends_on: [ port ]
+    properties:
+      floating_network: {get_param: floatingip_network_name}
+      port_id: {get_resource: port}
+
+  root_volume:
+    type: OS::Cinder::Volume
+    properties:
+      image: { get_param: image }
+      size: { get_param: vol_size }
+      volume_type: { get_param: vol_type }
+
+  server:
+    type: OS::Nova::Server
+#    depends_on: [ extrouter, network, interface, subnet, port, root_volume ]
+    depends_on: [ port, root_volume ]
+    properties:
+      name: deploydemo
+      flavor: { get_param: flavor }
+      block_device_mapping_v2: [{ device_name: "vda", volume_id : { get_resource : root_volume }, delete_on_termination : true }]
+#      image: { get_param: image }
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: port }
+      user_data_format: SOFTWARE_CONFIG
+      software_config_transport: POLL_SERVER_HEAT
+#      software_config_transport: POLL_TEMP_URL
+      user_data: { get_attr: [config_agent, config] }
+
+  # Install, configure and enable the Heat configuration agent
+  config_agent:
+    type: resources/collect-config-setup/install_config_agent_debian_pip.yaml
+
+  config:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: script
+      inputs:
+      - name: firstname
+      - name: lastname
+      outputs:
+      - name: result
+      config: { get_file: 'files/deploy.sh' }
+
+  deployment:
+    type: OS::Heat::SoftwareDeployment
+    properties:
+      config:
+        get_resource: config
+      server:
+        get_resource: server
+      input_values:
+        firstname: Demo
+        lastname: User
+      signal_transport: HEAT_SIGNAL
+#      signal_transport: TEMP_URL_SIGNAL
+
+outputs:
+  result:
+    value:
+      get_attr: [deployment, result]
+  stdout:
+    value:
+      get_attr: [deployment, deploy_stdout]
+  stderr:
+    value:
+      get_attr: [deployment, deploy_stderr]
+  status_code:
+    value:
+      get_attr: [deployment, deploy_status_code]
