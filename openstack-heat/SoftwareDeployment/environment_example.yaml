@@ -1,0 +1,10 @@
+parameters:
+  key_name: debian
+  flavor: standard-1.1
+  image: debian9-latest
+  vol_size: 5
+  vol_type: default
+  dns_nameservers: [ '192.168.1.1', '192.168.1.2' ]
+  floatingip_network_name: ext-net-default
+  network: private-net-id
+  subnet_cidr: "172.16.12.0/22"
