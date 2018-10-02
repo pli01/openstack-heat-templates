@@ -20,18 +20,19 @@ echo "# stack $stack_name exists ?"
 if ${openstack_cli} stack show ${stack_name} ; then
   echo "stack $stack_name update: $?"
   ${openstack_cli} stack check --wait ${stack_name}
-  ${openstack_cli} stack update ${heat_template_opt} ${registry_opt} ${heat_parameters_opt} ${stack_name}
+  ${openstack_cli} stack update --wait ${heat_template_opt} ${registry_opt} ${heat_parameters_opt} ${stack_name}
 else
   echo "stack $stack_name create: $?"
-  ${openstack_cli} stack create ${heat_template_opt} ${registry_opt} ${heat_parameters_opt} ${stack_name}
+  ${openstack_cli} stack create --wait ${heat_template_opt} ${registry_opt} ${heat_parameters_opt} ${stack_name}
 fi
-${openstack_cli} stack event list ${stack_name} || true
+#${openstack_cli} stack event list ${stack_name} || true
 
 ret=255; timeout=1200; n=0
 until [ $timeout -eq 0 -o $ret -lt 255 ] ; do
-  ${openstack_cli} stack event list ${stack_name}
+#  ${openstack_cli} stack event list ${stack_name}
+#  [ "$?" -gt 0 ] && ret=$?
+  eval $(${openstack_cli} stack show ${stack_name} -c stack_status -c stack_status_reason -f shell  || echo "false")
   [ "$?" -gt 0 ] && ret=$?
-  eval $(${openstack_cli} stack show ${stack_name} -c stack_status -c stack_status_reason -f shell )
   echo "## $stack_status"
   case "$stack_status" in
    *COMPLETE) ret=0 ;;
