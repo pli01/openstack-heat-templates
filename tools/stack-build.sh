@@ -7,6 +7,9 @@ export registry_opt=${registry_opt}
 export heat_parameters_opt=${heat_parameters_opt}
 export stack_name=${1:? stack_name not defined}
 
+# unbuffered output log
+export PYTHONUNBUFFERED=true
+
 # generate token
 if [ -z "$TOKEN_DISABLE" ] ; then
 echo "# generate token"
